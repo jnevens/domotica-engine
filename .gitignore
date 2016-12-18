@@ -1,0 +1,67 @@
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+src/domotica-engine
+
+# extra
+Makefile
+Makefile.in
+config.*
+configure
+.libs
+.deps
+autom4te.cache
+aclocal.m4
+ar-lib
+autom4te.cache/
+compile
+depcomp
+install-sh
+libtool
+libvsb.pc
+ltmain.sh
+m4/*
+missing
+stamp-h1
+
+# eclipse
+.cproject
+.project
+
+# tests
+tests/*.log
+test-driver
+tests/*.trs
+
+#coverage
+coverage.info
+coverage
+*.gcno
+*.gcov
+tests/*.gcda
