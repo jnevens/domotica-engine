@@ -19,6 +19,7 @@
 
 typedef struct {
 	uint32_t address;
+	uint8_t dim_value;
 } output_fud14_t;
 
 static bool fud14_output_parser(output_t *output, char *options[])
@@ -43,24 +44,31 @@ static bool fud14_output_exec(output_t *output, action_t *action)
 	case ACTION_SET :
 		msg = eltako_dimmer_create_message(output_fud14->address, DIMMER_EVENT_ON,
 				100, 1, false);
+		output_fud14->dim_value = 100;
 		break;
 	case ACTION_UNSET :
 		msg = eltako_dimmer_create_message(output_fud14->address, DIMMER_EVENT_OFF,
 				0, 1, false);
+		output_fud14->dim_value = 0;
+		break;
+	case ACTION_TOGGLE :
+		output_fud14->dim_value = (output_fud14->dim_value > 0) ? 0 : 100;
+		msg = eltako_dimmer_create_message(output_fud14->address, (output_fud14->dim_value > 0) ?
+				DIMMER_EVENT_ON : DIMMER_EVENT_OFF, output_fud14->dim_value, 1, false);
 		break;
 	default:
 		return false;
-		break;
 	}
+	log_debug("new output dim value: %d", output_fud14->dim_value);
 	return eltako_send(msg);
 }
 
 
 bool eltako_fud14_init(void)
 {
-	action_type_e supported_actions = ACTION_SET | ACTION_UNSET | ACTION_DIM;
+	action_type_e supported_actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE | ACTION_DIM;
 	output_register_type("FUD14", supported_actions, fud14_output_parser, fud14_output_exec);
-	log_debug("supported action: 0x%x", supported_actions);
+	log_debug("supported actions: 0x%x", supported_actions);
 
 	return true;
 }
