@@ -48,7 +48,7 @@ action_type_e action_get_type(action_t *action)
 void action_print(action_t *action)
 {
 	output_t *output = action->output;
-	log_info("action: output: %s, type: %s", output_get_name(output), action_type_name[action->type]);
+	log_info("action: output: %s, type: %s", output_get_name(output), action_type_to_char(action->type));
 }
 
 action_type_e action_type_from_char(const char *type_str)
