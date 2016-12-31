@@ -17,7 +17,6 @@
 static void trigger_action_iter_cb(action_t *action, void *arg)
 {
 	event_t *event = arg;
-	log_debug("Execute action!");
 	action_execute(action, event);
 }
 
