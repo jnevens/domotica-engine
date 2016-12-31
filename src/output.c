@@ -102,7 +102,6 @@ bool output_set(output_t *output, action_t *action)
 	list_for_each(node, output_types) {
 		output_type_t *output_type = list_node_data(node);
 		if (output_type == output->output_type) {
-			log_debug("0x%x & 0x%x = 0x%x", action_get_type(action), output_type->actions, action_get_type(action) & output_type->actions);
 			if (action_get_type(action) & output_type->actions) {
 				output_type->exec_cb(output, action);
 			} else {
