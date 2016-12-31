@@ -61,7 +61,7 @@ static void incoming_data(void *data, size_t len, void *arg)
 	eltako_frame_destroy(frame);
 }
 
-static void handle_incoming_event(int fd, void *arg)
+static void handle_incoming_event(int fd, short int revents, void *arg)
 {
 	vsb_client_t *vsb_client = (vsb_client_t *)arg;
 	vsb_client_handle_incoming_event(vsb_client);
@@ -77,7 +77,7 @@ static bool eltako_connect_with_eltakod(void)
 	vsb_client = vsb_client_init("/var/run/eltako.socket", "domotica-engine");
 	int eltako_fd = vsb_client_get_fd(vsb_client);
 	vsb_client_register_incoming_data_cb(vsb_client, incoming_data, NULL);
-	event_add(eltako_fd, handle_incoming_event, NULL, vsb_client);
+	event_add(eltako_fd, POLLIN, handle_incoming_event, NULL, vsb_client);
 	vsb_client_register_disconnect_cb(vsb_client, handle_connection_disconnect, NULL);
 }
 
