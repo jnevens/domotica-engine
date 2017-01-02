@@ -28,6 +28,11 @@ static char *action_type_name[] = {
 
 action_t *action_create(output_t *output, action_type_e action_type, char *options[])
 {
+	if (!(output_get_supported_action(output) & action_type)) {
+		log_fatal("output %s does not support action: %s", output_get_name(output), action_type_to_char(action_type));
+		return NULL;
+	}
+
 	action_t *action = calloc(1, sizeof(action_t));
 	action->output = output;
 	action->type = action_type;
