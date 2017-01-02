@@ -111,7 +111,6 @@ void gpio_input_edge_detected_cb(int fd, short int revents, void *arg)
 	lseek(fd, 0, SEEK_SET);
 	int rv = read(fd, buf, sizeof(buf));
 	int edge = (buf[0] == '1') ? 1 : 0;
-	log_info("edge detected! rv: %d edge: %d", rv, edge);
 
 	input_t *input = input_list_find(gpio_input_find_by_fd_cb, (void *)fd);
 	if (input) {
@@ -120,7 +119,6 @@ void gpio_input_edge_detected_cb(int fd, short int revents, void *arg)
 			input_gpio->value = edge;
 			input_gpio->last_time_ms = get_current_time_ms();
 
-			log_info("gpio event: %s, %d", input_get_name(input), edge);
 			gpio_input_handle_edge(input);
 		}
 	}
