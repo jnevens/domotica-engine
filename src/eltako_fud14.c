@@ -14,7 +14,8 @@
 
 #include "eltako.h"
 #include "action.h"
-#include "output.h"
+#include "event.h"
+#include "device.h"
 #include "eltako_fud14.h"
 
 typedef struct {
@@ -24,11 +25,11 @@ typedef struct {
 	uint8_t dim_min_value;
 	uint8_t dim_max_value;
 	uint8_t dim_interval;
-} output_fud14_t;
+} device_fud14_t;
 
-static bool fud14_output_parser(output_t *output, char *options[])
+static bool fud14_device_parser(device_t *device, char *options[])
 {
-	output_fud14_t *fud14 = calloc(1, sizeof(output_fud14_t));
+	device_fud14_t *fud14 = calloc(1, sizeof(device_fud14_t));
 	if(options[1] != NULL) {
 		fud14->address = strtoll(options[1], NULL, 16);
 		fud14->dim_value = 0;
@@ -36,18 +37,18 @@ static bool fud14_output_parser(output_t *output, char *options[])
 		fud14->dim_min_value = 0;
 		fud14->dim_max_value = 100;
 		fud14->dim_interval = 3;
-		output_set_userdata(output, fud14);
-		log_debug("FUD14 output created (name: %s, address: 0x%x)", output_get_name(output), fud14->address);
+		device_set_userdata(device, fud14);
+		log_debug("FUD14 device created (name: %s, address: 0x%x)", device_get_name(device), fud14->address);
 		return true;
 	}
 	return false;
 }
 
-static bool fud14_output_exec(output_t *output, action_t *action)
+static bool fud14_device_exec(device_t *device, action_t *action)
 {
-	output_fud14_t *fud14 = output_get_userdata(output);
+	device_fud14_t *fud14 = device_get_userdata(device);
 	eltako_message_t *msg = NULL;
-	log_info("set fud14 output: %s, type: %s", output_get_name(output), action_type_to_char(action_get_type(action)));
+	log_info("set fud14 device: %s, type: %s", device_get_name(device), action_type_to_char(action_get_type(action)));
 
 	switch (action_get_type(action)) {
 	case ACTION_SET:
@@ -85,7 +86,7 @@ static bool fud14_output_exec(output_t *output, action_t *action)
 	default:
 		return false;
 	}
-	log_info("set fud14 output: %s, type: %s, new value: %d", output_get_name(output),
+	log_info("set fud14 device: %s, type: %s, new value: %d", device_get_name(device),
 			action_type_to_char(action_get_type(action)), fud14->dim_value);
 	return eltako_send(msg);
 }
@@ -93,9 +94,9 @@ static bool fud14_output_exec(output_t *output, action_t *action)
 
 bool eltako_fud14_init(void)
 {
-	action_type_e supported_actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE | ACTION_DIM;
-	output_register_type("FUD14", supported_actions, fud14_output_parser, fud14_output_exec);
-	log_debug("supported actions: 0x%x", supported_actions);
+	action_type_e actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE | ACTION_DIM;
+	event_type_e events = 0;
+	device_register_type("FUD14", events, actions, fud14_device_parser, fud14_device_exec);
 
 	return true;
 }

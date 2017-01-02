@@ -10,12 +10,12 @@
 
 #include <bus/log.h>
 
-#include "output.h"
+#include "device.h"
 #include "action.h"
 
 struct action_s {
 	action_type_e type;
-	output_t *output;
+	device_t *device;
 	// state
 };
 
@@ -26,15 +26,15 @@ static char *action_type_name[] = {
 };
 #undef X
 
-action_t *action_create(output_t *output, action_type_e action_type, char *options[])
+action_t *action_create(device_t *device, action_type_e action_type, char *options[])
 {
-	if (!(output_get_supported_action(output) & action_type)) {
-		log_fatal("output %s does not support action: %s", output_get_name(output), action_type_to_char(action_type));
+	if (!(device_get_supported_action(device) & action_type)) {
+		log_fatal("device %s does not support action: %s", device_get_name(device), action_type_to_char(action_type));
 		return NULL;
 	}
 
 	action_t *action = calloc(1, sizeof(action_t));
-	action->output = output;
+	action->device = device;
 	action->type = action_type;
 
 	return action;
@@ -52,8 +52,8 @@ action_type_e action_get_type(action_t *action)
 
 void action_print(action_t *action)
 {
-	output_t *output = action->output;
-	log_info("action: output: %s, type: %s", output_get_name(output), action_type_to_char(action->type));
+	device_t *device = action->device;
+	log_info("action: device: %s, type: %s", device_get_name(device), action_type_to_char(action->type));
 }
 
 action_type_e action_type_from_char(const char *type_str)
@@ -89,6 +89,6 @@ const char *action_type_to_char(action_type_e type)
 
 bool action_execute(action_t *action, event_t *event)
 {
-	output_set(action->output, action);
+	device_set(action->device, action);
 	return true;
 }

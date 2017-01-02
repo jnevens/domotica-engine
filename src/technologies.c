@@ -11,6 +11,7 @@
 #include "eltako.h"
 #include "gpio.h"
 #include "technologies.h"
+#include "timer.h"
 
 typedef struct {
 	technology_init_fn_t init_fn;
@@ -18,6 +19,10 @@ typedef struct {
 } technology_t;
 
 static technology_t technologies[] = {
+		{
+				.init_fn = timer_technology_init,
+				.name = "Timer",
+		},
 		{
 				.init_fn = eltako_technology_init,
 				.name = "Eltako Series 14",

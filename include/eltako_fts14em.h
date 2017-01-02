@@ -16,8 +16,8 @@
 
 bool eltako_fts14em_init(void);
 
-void eltako_fts14em_incoming_data(eltako_message_t *msg, input_t *input);
+void eltako_fts14em_incoming_data(eltako_message_t *msg, device_t *device);
 
-uint32_t eltako_fts14em_get_address(input_t *input);
+uint32_t eltako_fts14em_get_address(device_t *device);
 
 #endif /* ELTAKO_FTS14EM_H_ */

@@ -9,8 +9,7 @@
 #include "rule_parser.h"
 #include "technologies.h"
 #include "rule_list.h"
-#include "input_list.h"
-#include "output_list.h"
+#include "device_list.h"
 
 static void termination_handler(int signum)
 {
@@ -34,8 +33,7 @@ int main(int argc, char *argv[])
 	arguments_parse(argc, argv);
 	// parse config file
 	rule_list_init();
-	input_list_init();
-	output_list_init();
+	device_list_init();
 	if(!technologies_init())
 		goto stop;
 

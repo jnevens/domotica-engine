@@ -14,8 +14,8 @@
 #include <libeltako/frame.h>
 #include <libeltako/message.h>
 
-#include "input.h"
-#include "input_list.h"
+#include "device.h"
+#include "device_list.h"
 #include "eltako.h"
 #include "eltako_fts14em.h"
 #include "eltako_fud14.h"
@@ -29,10 +29,10 @@ bool eltako_send(eltako_message_t *msg)
 	vsb_client_send_data(vsb_client, eltako_frame_get_data(frame), eltako_frame_get_raw_size(frame));
 }
 
-static bool input_list_find_cb(input_t *input, void *arg) {
+static bool device_list_find_cb(device_t *device, void *arg) {
 	eltako_message_t *msg = arg;
-	if (strcmp(input_get_type(input), "FTS14EM") == 0) {
-		uint32_t address = eltako_fts14em_get_address(input);
+	if (strcmp(device_get_type(device), "FTS14EM") == 0) {
+		uint32_t address = eltako_fts14em_get_address(device);
 		if (address == eltako_message_get_address(msg)) {
 			return true;
 		}
@@ -47,11 +47,11 @@ static void incoming_data(void *data, size_t len, void *arg)
 	//eltako_frame_print(frame);
 
 	eltako_message_print(msg);
-	input_t *input = input_list_find(input_list_find_cb, (void *)msg);
-	if (input) {
-		log_debug("Input triggered: %s (%s)", input_get_name(input), input_get_type(input));
-		if (strcmp(input_get_type(input), "FTS14EM") == 0) {
-			eltako_fts14em_incoming_data(msg, input);
+	device_t *device = device_list_find(device_list_find_cb, (void *)msg);
+	if (device) {
+		log_debug("Input triggered: %s (%s)", device_get_name(device), device_get_type(device));
+		if (strcmp(device_get_type(device), "FTS14EM") == 0) {
+			eltako_fts14em_incoming_data(msg, device);
 		}
 	} else {
 		log_debug("ignore eltako message from 0x%x", eltako_message_get_address(msg));

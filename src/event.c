@@ -10,7 +10,7 @@
 
 #include <bus/log.h>
 
-#include "input.h"
+#include "device.h"
 #include "event.h"
 
 #define X(a, b) b,
@@ -22,16 +22,16 @@ static char *event_type_name[] = {
 
 struct event_s {
 	enum event_src_type src_type;
-	void *src;
+	device_t *device;
 	event_type_e type;
 	// event options ...
 };
 
-event_t *event_create_input(input_t *input, event_type_e event_type)
+event_t *event_create(device_t *device, event_type_e event_type)
 {
 	event_t *event = calloc(1, sizeof(event_t));
 	event->src_type = EVENT_SRC_INPUT;
-	event->src = input;
+	event->device = device;
 	event->type = event_type;
 
 	return event;
@@ -47,9 +47,9 @@ const char *event_get_name(event_t *event)
 	return event_type_name[event->type];
 }
 
-input_t *event_get_input(event_t *event)
+device_t *event_get_device(event_t *event)
 {
-	return (input_t *) event->src;
+	return (device_t *) event->device;
 }
 
 bool event_equal(event_t *event1, event_t *event2)
@@ -57,7 +57,7 @@ bool event_equal(event_t *event1, event_t *event2)
 	if (event1->src_type != event2->src_type) {
 		return false;
 	}
-	if (event1->src != event2->src) {
+	if (event1->device != event2->device) {
 		return false;
 	}
 	if (event1->type != event2->type) {
@@ -84,6 +84,6 @@ event_type_e event_type_from_char(const char *name) {
 
 void event_print(event_t *event)
 {
-	input_t *input = (input_t *) event->src;
-	log_info("event: input: %s, type: %s", input_get_name(input), event_get_name(event));
+	device_t *device = (device_t *) event->device;
+	log_info("event: device: %s, type: %s", device_get_name(device), event_get_name(event));
 }

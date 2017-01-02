@@ -11,7 +11,7 @@
 #include <bus/log.h>
 #include <bus/list.h>
 
-#include "input.h"
+#include "device.h"
 #include "rule.h"
 #include "event.h"
 #include "action.h"

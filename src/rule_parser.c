@@ -17,12 +17,12 @@
 
 #include <bus/log.h>
 
+#include "event.h"
+#include "action.h"
 #include "rule.h"
-#include "input.h"
-#include "output.h"
+#include "device.h"
+#include "device_list.h"
 #include "rule_list.h"
-#include "input_list.h"
-#include "output_list.h"
 
 #define LINE_MAX_OPTIONS 10
 
@@ -159,23 +159,13 @@ int rules_read_file(const char *file)
 		if(ln) {
 			switch(ln->action) {
 				case STATEMENT_INPUT :
-				{
-					input_t *input = input_create(ln->name, ln->options);
-					if (input) {
-						input_list_add(input);
-					} else {
-						log_fatal("Failed to parse input: %s (%s:%d)", ln->name, file, line_nr);
-						ret = -1;
-					}
-					break;
-				}
 				case STATEMENT_OUTPUT :
 				{
-					output_t *output = output_create(ln->name, ln->options);
-					if (output) {
-						output_list_add(output);
+					device_t *device = device_create(ln->name, ln->options);
+					if (device) {
+						device_list_add(device);
 					} else {
-						log_fatal("Failed to parse output: %s (%s:%d)", ln->name, file, line_nr);
+						log_fatal("Failed to parse device: %s (%s:%d)", ln->name, file, line_nr);
 						ret = -1;
 					}
 					break;
@@ -184,9 +174,9 @@ int rules_read_file(const char *file)
 				{
 					log_debug("Create rule");
 					rule = rule_create();
-					input_t *input = input_list_find_by_name(ln->name);
-					if (!input) {
-						log_err("Cannot find input: %s", ln->name);
+					device_t *device = device_list_find_by_name(ln->name);
+					if (!device) {
+						log_err("Cannot find device: %s", ln->name);
 						ret = -1;
 						break;
 					}
@@ -197,7 +187,7 @@ int rules_read_file(const char *file)
 						break;
 					}
 
-					event_t *event = event_create_input(input, event_type);
+					event_t *event = event_create(device, event_type);
 					rule_add_event(rule, event);
 					rule_list_add(rule);
 					break;
@@ -214,9 +204,9 @@ int rules_read_file(const char *file)
 					if (!rule) {
 						log_fatal("No IF before DO! (%s:%d)", file, line_nr);
 					}
-					output_t *output = output_list_find_by_name(ln->name);
-					if (!output) {
-						log_err("Cannot find output: %s", ln->name);
+					device_t *device = device_list_find_by_name(ln->name);
+					if (!device) {
+						log_err("Cannot find device: %s", ln->name);
 						ret = -1;
 						break;
 					}
@@ -227,7 +217,7 @@ int rules_read_file(const char *file)
 						break;
 					}
 					log_debug("rule action type: 0x%x", action_type);
-					action_t *action = action_create(output, action_type, ln->options);
+					action_t *action = action_create(device, action_type, ln->options);
 					rule_add_action(rule, action);
 					break;
 				}

@@ -29,11 +29,11 @@ enum event_src_type {
 };
 
 const char *event_get_name(event_t *event);
-input_t *event_get_input(event_t *event);
+device_t *event_get_device(event_t *event);
 
 bool event_equal(event_t *event1, event_t *event2);
 
-event_t *event_create_input(input_t *input, event_type_e event);
+event_t *event_create(device_t *device, event_type_e event);
 void event_delete(event_t *event); // event_destroy exist in bus/event.h
 
 event_type_e event_type_from_char(const char *name);

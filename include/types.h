@@ -10,6 +10,7 @@
 
 typedef struct input_s input_t;
 typedef struct output_s output_t;
+typedef struct device_s device_t;
 typedef struct rule_s rule_t;
 typedef struct event_s event_t;
 typedef struct action_s action_t;

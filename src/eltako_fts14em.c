@@ -13,7 +13,9 @@
 #include <bus/event.h>
 #include <bus/timer.h>
 
-#include "input.h"
+#include "event.h"
+#include "action.h"
+#include "device.h"
 #include "utils_time.h"
 #include "eltako_fts14em.h"
 
@@ -21,15 +23,15 @@ typedef struct {
 	uint32_t address;
 	uint64_t press_time;
 	event_timer_t *timer;
-} fts14em_input_t;
+} fts14em_device_t;
 
-static bool fts14em_input_parser(input_t *input, char *options[])
+static bool fts14em_device_parser(device_t *device, char *options[])
 {
-	fts14em_input_t *eltako_input = calloc(1, sizeof(fts14em_input_t));
+	fts14em_device_t *eltako_device = calloc(1, sizeof(fts14em_device_t));
 	if(options[1] != NULL) {
-		eltako_input->address = strtoll(options[1], NULL, 16);
-		input_set_userdata(input, eltako_input);
-		log_info("FTS14EM input created (name: %s, address: 0x%x)", input_get_name(input), eltako_input->address);
+		eltako_device->address = strtoll(options[1], NULL, 16);
+		device_set_userdata(device, eltako_device);
+		log_info("FTS14EM device created (name: %s, address: 0x%x)", device_get_name(device), eltako_device->address);
 		return true;
 	}
 	return false;
@@ -37,77 +39,78 @@ static bool fts14em_input_parser(input_t *input, char *options[])
 
 bool eltako_fts14em_dim_press_timer_cb(void *arg)
 {
-	input_t *input = arg;
-	fts14em_input_t *fts14em_input = input_get_userdata(input);
+	device_t *device = arg;
+	fts14em_device_t *fts14em_device = device_get_userdata(device);
 
-	uint64_t press_time = fts14em_input->press_time;
+	uint64_t press_time = fts14em_device->press_time;
 	uint64_t release_time = get_current_time_ms();
 	uint64_t press_duration = release_time - press_time;
 
-	input_trigger_event(input, EVENT_DIM);
+	device_trigger_event(device, EVENT_DIM);
 
 	return event_timer_continue;
 }
 
 bool eltako_fts14em_short_press_timer_cb(void *arg)
 {
-	input_t *input = arg;
-	fts14em_input_t *fts14em_input = input_get_userdata(input);
+	device_t *device = arg;
+	fts14em_device_t *fts14em_device = device_get_userdata(device);
 
-	fts14em_input->timer = event_timer_create(PRESS_DIM_INTERVAL_TIME_MS, eltako_fts14em_dim_press_timer_cb, input);
+	fts14em_device->timer = event_timer_create(PRESS_DIM_INTERVAL_TIME_MS, eltako_fts14em_dim_press_timer_cb, device);
 
-	input_trigger_event(input, EVENT_DIM);
+	device_trigger_event(device, EVENT_DIM);
 
 	return event_timer_stop;
 }
 
-void eltako_fts14em_incoming_data(eltako_message_t *msg, input_t *input)
+void eltako_fts14em_incoming_data(eltako_message_t *msg, device_t *device)
 {
 	int status = eltako_message_get_status(msg);
-	fts14em_input_t *fts14em_input = input_get_userdata(input);
+	fts14em_device_t *fts14em_device = device_get_userdata(device);
 
 	if(status == 0x30) { // press
-		input_trigger_event(input, EVENT_PRESS);
-		fts14em_input->press_time = get_current_time_ms();
+		device_trigger_event(device, EVENT_PRESS);
+		fts14em_device->press_time = get_current_time_ms();
 
-		if(fts14em_input->timer) {
-			event_timer_destroy(fts14em_input->timer);
+		if(fts14em_device->timer) {
+			event_timer_destroy(fts14em_device->timer);
 		}
-		fts14em_input->timer = event_timer_create(SHORT_PRESS_MAX_TIME_MS, eltako_fts14em_short_press_timer_cb, input);
+		fts14em_device->timer = event_timer_create(SHORT_PRESS_MAX_TIME_MS, eltako_fts14em_short_press_timer_cb, device);
 	} else if (status == 0x20) { // release
-		uint64_t press_time = fts14em_input->press_time;
+		uint64_t press_time = fts14em_device->press_time;
 		uint64_t release_time = get_current_time_ms();
 		uint64_t press_duration = release_time - press_time;
 		log_debug("press duration: %llums", press_duration);
 
-		input_trigger_event(input, EVENT_RELEASE);
+		device_trigger_event(device, EVENT_RELEASE);
 
-		event_timer_destroy(fts14em_input->timer);
-		fts14em_input->timer = NULL;
+		event_timer_destroy(fts14em_device->timer);
+		fts14em_device->timer = NULL;
 
 		if(press_duration <= SHORT_PRESS_MAX_TIME_MS) {
-			input_trigger_event(input, EVENT_SHORT_PRESS);
+			device_trigger_event(device, EVENT_SHORT_PRESS);
 		} else {
-			input_trigger_event(input, EVENT_LONG_PRESS);
+			device_trigger_event(device, EVENT_LONG_PRESS);
 		}
 	}
 }
 
-static bool fts14em_input_exec(input_t *input)
+static bool fts14em_device_exec(device_t *device, action_t *action)
 {
 	return false;
 }
 
-uint32_t eltako_fts14em_get_address(input_t *input)
+uint32_t eltako_fts14em_get_address(device_t *device)
 {
-	fts14em_input_t *eltako_input = input_get_userdata(input);
-	return eltako_input->address;
+	fts14em_device_t *eltako_device = device_get_userdata(device);
+	return eltako_device->address;
 }
 
 bool eltako_fts14em_init(void)
 {
 	event_type_e events = EVENT_PRESS | EVENT_RELEASE | EVENT_SHORT_PRESS | EVENT_LONG_PRESS | EVENT_DIM;
-	input_register_type("FTS14EM", events, fts14em_input_parser, fts14em_input_exec);
+	action_type_e actions = 0;
+	device_register_type("FTS14EM", events, actions, fts14em_device_parser, fts14em_device_exec);
 
 	return false;
 }

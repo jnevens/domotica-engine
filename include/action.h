@@ -23,7 +23,7 @@ enum action_type {
 };
 #undef X
 
-action_t *action_create(output_t *output, action_type_e action_type, char *options[]);
+action_t *action_create(device_t *device, action_type_e action_type, char *options[]);
 void action_destroy(action_t *action);
 
 action_type_e action_get_type(action_t *action);
