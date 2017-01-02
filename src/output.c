@@ -77,6 +77,11 @@ const char *output_get_name(output_t *output)
 	return output->name;
 }
 
+action_type_e output_get_supported_action(output_t *output)
+{
+	return output->output_type->actions;
+}
+
 bool output_register_type(const char *name, action_type_e actions, output_parse_fn_t parse_cb, output_exec_fn_t exec_cb)
 {
 	if (!output_types) {

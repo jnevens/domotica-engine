@@ -26,5 +26,6 @@ bool output_set(output_t *output, action_t *action);
 bool output_register_type(const char *name, action_type_e actions, output_parse_fn_t parse_cb, output_exec_fn_t exec_cb);
 
 const char *output_get_name(output_t *output);
+action_type_e output_get_supported_action(output_t *output);
 
 #endif /* OUTPUT_H_ */
