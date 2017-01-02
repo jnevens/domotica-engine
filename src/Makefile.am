@@ -1,4 +1,4 @@
-AM_CPPFLAGS =
+AM_CPPFLAGS = -I$(src_buildir)/include -I$(top_srcdir)/include
 LDADD =
 
 sbin_PROGRAMS = domotica-engine
