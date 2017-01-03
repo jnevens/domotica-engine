@@ -180,6 +180,10 @@ static bool gpio_output_exec(device_t *device, action_t *action)
 		gpio_set_value(output_gpio->pin, GPIO_VAL_LOW);
 		output_gpio->value = GPIO_VAL_LOW;
 		break;
+	case ACTION_TOGGLE:
+		output_gpio->value = !output_gpio->value;
+		gpio_set_value(output_gpio->pin, output_gpio->value);
+		break;
 	}
 	log_debug("gpio %s(%d) set to: %d", device_get_name(device), output_gpio->pin, output_gpio->value);
 
@@ -190,7 +194,7 @@ bool gpio_technology_init(void)
 {
 	event_type_e events = EVENT_PRESS | EVENT_RELEASE | EVENT_SHORT_PRESS | EVENT_LONG_PRESS | EVENT_DIM;
 	device_register_type("GPIO", events, 0, gpio_input_parser, gpio_input_exec);
-	action_type_e actions = ACTION_SET | ACTION_UNSET;
+	action_type_e actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE;
 	device_register_type("GPIO-OUT", 0, actions, gpio_output_parser, gpio_output_exec);
 
 	log_info("Succesfully initialized: gpio!");
