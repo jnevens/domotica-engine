@@ -32,7 +32,7 @@ struct device_s {
 
 static list_t *device_types;
 
-device_t *device_create(char *name, char *options[])
+device_t *device_create(char *name, const char *devtype, char *options[])
 {
 	log_info("Device create: %s", name);
 	device_t *device = calloc(1, sizeof(device_t));
@@ -43,7 +43,7 @@ device_t *device_create(char *name, char *options[])
 		list_node_t *node;
 		list_for_each(node, device_types) {
 			device_type_t *device_type = list_node_data(node);
-			if (strcmp(device_type->name, options[0]) == 0) {
+			if (strcmp(device_type->name, devtype) == 0) {
 				log_info("Device create: %s", name);
 				if(device_type->parse_cb(device, options)) {
 					device->device_type = device_type;

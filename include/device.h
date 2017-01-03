@@ -18,7 +18,7 @@
 typedef bool (*device_parse_fn_t)(device_t *device, char *options[]);
 typedef bool (*device_exec_fn_t)(device_t *device, action_t *action);
 
-device_t *device_create(char *name, char *options[]);
+device_t *device_create(char *name, const char *devtype, char *options[]);
 void device_destroy(device_t *device);
 
 void device_set_userdata(device_t *device, void *userdata);

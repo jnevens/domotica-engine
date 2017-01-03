@@ -16,7 +16,8 @@
 	X(EVENT_RELEASE, "RELEASE" ) \
 	X(EVENT_SHORT_PRESS, "SHORT_PRESS" ) \
 	X(EVENT_LONG_PRESS, "LONG_PRESS" ) \
-	X(EVENT_DIM, "DIM" )
+	X(EVENT_DIM, "DIM" ) \
+	X(EVENT_TIMEOUT, "TIMEOUT" )
 
 #define X(a,b) a,
 enum event_type {

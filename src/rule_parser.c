@@ -34,6 +34,7 @@ static void action_output_handler(char *line);
 #define STATEMENT_TABLE \
 	X(STATEMENT_INPUT,		"INPUT",	action_input_parser) \
 	X(STATEMENT_OUTPUT,		"OUTPUT",	action_output_parser) \
+	X(STATEMENT_TIMER,		"TIMER",	NULL) \
 	X(STATEMENT_IF,			"IF",		NULL) \
 	X(STATEMENT_AND,		"AND",		NULL) \
 	X(STATEMENT_DO,			"DO",		NULL) \
@@ -156,76 +157,73 @@ int rules_read_file(const char *file)
 		line_t *ln = line_parse(line);
 		static rule_t *rule = NULL;
 
-		if(ln) {
-			switch(ln->action) {
-				case STATEMENT_INPUT :
-				case STATEMENT_OUTPUT :
-				{
-					device_t *device = device_create(ln->name, ln->options);
-					if (device) {
-						device_list_add(device);
-					} else {
-						log_fatal("Failed to parse device: %s (%s:%d)", ln->name, file, line_nr);
-						ret = -1;
-					}
+		if (ln) {
+			switch (ln->action) {
+			case STATEMENT_INPUT:
+			case STATEMENT_OUTPUT:
+			case STATEMENT_TIMER: {
+				const char *devtype = (ln->action == STATEMENT_TIMER) ? "TIMER" : ln->options[0];
+				device_t *device = device_create(ln->name, devtype, ln->options);
+				if (device) {
+					device_list_add(device);
+				} else {
+					log_fatal("Failed to parse device: %s (%s:%d)", ln->name, file, line_nr);
+					ret = -1;
+				}
+				break;
+			}
+			case STATEMENT_IF: {
+				log_debug("Create rule");
+				rule = rule_create();
+				device_t *device = device_list_find_by_name(ln->name);
+				if (!device) {
+					log_err("Cannot find device: %s", ln->name);
+					ret = -1;
 					break;
 				}
-				case STATEMENT_IF :
-				{
-					log_debug("Create rule");
-					rule = rule_create();
-					device_t *device = device_list_find_by_name(ln->name);
-					if (!device) {
-						log_err("Cannot find device: %s", ln->name);
-						ret = -1;
-						break;
-					}
-					event_type_e event_type = event_type_from_char(ln->options[0]);
-					if (event_type == -1) {
-						log_err("Event '%s' does not exist!", ln->options[0]);
-						ret = -1;
-						break;
-					}
+				event_type_e event_type = event_type_from_char(ln->options[0]);
+				if (event_type == -1) {
+					log_err("Event '%s' does not exist!", ln->options[0]);
+					ret = -1;
+					break;
+				}
 
-					event_t *event = event_create(device, event_type);
-					rule_add_event(rule, event);
-					rule_list_add(rule);
+				event_t *event = event_create(device, event_type);
+				rule_add_event(rule, event);
+				rule_list_add(rule);
+				break;
+			}
+			case STATEMENT_AND: {
+				log_debug("Rule add condition: %s %s", ln->name, ln->options[0]);
+				rule_add_condition(rule, ln->name, ln->options[0]);
+				break;
+			}
+			case STATEMENT_DO: {
+				log_debug("Rule add action: %s %s", ln->name, ln->options[0]);
+				if (!rule) {
+					log_fatal("No IF before DO! (%s:%d)", file, line_nr);
+				}
+				device_t *device = device_list_find_by_name(ln->name);
+				if (!device) {
+					log_err("Cannot find device: %s", ln->name);
+					ret = -1;
 					break;
 				}
-				case STATEMENT_AND :
-				{
-					log_debug("Rule add condition: %s %s", ln->name, ln->options[0]);
-					rule_add_condition(rule, ln->name, ln->options[0]);
+				action_type_e action_type = action_type_from_char(ln->options[0]);
+				if (action_type == -1) {
+					log_err("Action '%s' does not exist!", ln->options[0]);
+					ret = -1;
 					break;
 				}
-				case STATEMENT_DO :
-				{
-					log_debug("Rule add action: %s %s", ln->name, ln->options[0]);
-					if (!rule) {
-						log_fatal("No IF before DO! (%s:%d)", file, line_nr);
-					}
-					device_t *device = device_list_find_by_name(ln->name);
-					if (!device) {
-						log_err("Cannot find device: %s", ln->name);
-						ret = -1;
-						break;
-					}
-					action_type_e action_type = action_type_from_char(ln->options[0]);
-					if (action_type == -1 ) {
-						log_err("Action '%s' does not exist!", ln->options[0]);
-						ret = -1;
-						break;
-					}
-					log_debug("rule action type: 0x%x", action_type);
-					action_t *action = action_create(device, action_type, ln->options);
-					rule_add_action(rule, action);
-					break;
-				}
-				default:
-				{
-					log_err("invalid action!");
-					break;
-				}
+				log_debug("rule action type: 0x%x", action_type);
+				action_t *action = action_create(device, action_type, ln->options);
+				rule_add_action(rule, action);
+				break;
+			}
+			default: {
+				log_err("invalid action!");
+				break;
+			}
 			}
 			if (ret)
 				break;
