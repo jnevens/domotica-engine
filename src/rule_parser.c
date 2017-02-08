@@ -38,6 +38,7 @@ static void action_output_handler(char *line);
 	X(STATEMENT_IF,			"IF",		NULL) \
 	X(STATEMENT_AND,		"AND",		NULL) \
 	X(STATEMENT_DO,			"DO",		NULL) \
+	X(STATEMENT_SUNRISET,	"SUNRISET",	NULL) \
 	X(STATEMENT_INVALID,	NULL,		NULL)
 
 #define X(a, b, c) a,
@@ -161,8 +162,13 @@ int rules_read_file(const char *file)
 			switch (ln->action) {
 			case STATEMENT_INPUT:
 			case STATEMENT_OUTPUT:
+			case STATEMENT_SUNRISET:
 			case STATEMENT_TIMER: {
-				const char *devtype = (ln->action == STATEMENT_TIMER) ? "TIMER" : ln->options[0];
+				const char *devtype = ln->options[0];
+				if (ln->action == STATEMENT_TIMER)
+					devtype = "TIMER";
+				if (ln->action == STATEMENT_SUNRISET)
+					devtype = "SUNRISET";
 				device_t *device = device_create(ln->name, devtype, ln->options);
 				if (device) {
 					device_list_add(device);
@@ -221,7 +227,8 @@ int rules_read_file(const char *file)
 				break;
 			}
 			default: {
-				log_err("invalid action!");
+				log_fatal("Failed to parse device (invalid action): %s (%s:%d)", ln->name, file, line_nr);
+				ret = -1;
 				break;
 			}
 			}

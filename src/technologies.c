@@ -12,6 +12,7 @@
 #include "gpio.h"
 #include "technologies.h"
 #include "timer.h"
+#include "sunriset.h"
 
 typedef struct {
 	technology_init_fn_t init_fn;
@@ -33,6 +34,11 @@ static technology_t technologies[] = {
 		{
 				.init_fn = gpio_technology_init,
 				.name = "GPIO",
+				.exit_on_fail = true,
+		},
+		{
+				.init_fn = sunriset_technology_init,
+				.name = "Sunriset",
 				.exit_on_fail = true,
 		},
 		{}

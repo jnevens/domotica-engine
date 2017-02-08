@@ -3,7 +3,7 @@ LDADD =
 
 sbin_PROGRAMS = domotica-engine
 
-domotica_engine_LDADD = -lvsb -lbus -leltako $(LDADD)
+domotica_engine_LDADD = -lvsb -lbus -leltako $(LDADD) -lm
 domotica_engine_SOURCES = \
 	action.c \
 	arguments.c \
@@ -19,7 +19,9 @@ domotica_engine_SOURCES = \
 	rule.c \
 	rule_list.c \
 	rule_parser.c \
+	sunriset.c \
 	technologies.c \
 	timer.c \
 	utils_gpio.c \
+	utils_sunriset.c \
 	utils_time.c
