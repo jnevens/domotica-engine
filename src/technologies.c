@@ -16,20 +16,24 @@
 typedef struct {
 	technology_init_fn_t init_fn;
 	char *name;
+	bool exit_on_fail;
 } technology_t;
 
 static technology_t technologies[] = {
 		{
 				.init_fn = timer_technology_init,
 				.name = "Timer",
+				.exit_on_fail = true,
 		},
 		{
 				.init_fn = eltako_technology_init,
 				.name = "Eltako Series 14",
+				.exit_on_fail = false,
 		},
 		{
 				.init_fn = gpio_technology_init,
 				.name = "GPIO",
+				.exit_on_fail = true,
 		},
 		{}
 };
@@ -45,7 +49,8 @@ bool technologies_init(void)
 			log_info("Successfully initialize technology '%s'!", technologies[i].name);
 		} else {
 			log_fatal("Failed to initialize technology '%s'!", technologies[i].name);
-			break;
+			if (technologies[i].exit_on_fail)
+				break;
 		}
 		i++;
 	}
