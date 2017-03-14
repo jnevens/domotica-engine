@@ -193,6 +193,7 @@ int rules_read_file(const char *file)
 					ret = -1;
 					break;
 				}
+				log_debug("Rule add event: %s %s", ln->name, ln->options[0]);
 
 				event_t *event = event_create(device, event_type);
 				rule_add_event(rule, event);
@@ -221,7 +222,6 @@ int rules_read_file(const char *file)
 					ret = -1;
 					break;
 				}
-				log_debug("rule action type: 0x%x", action_type);
 				action_t *action = action_create(device, action_type, ln->options);
 				rule_add_action(rule, action);
 				break;
