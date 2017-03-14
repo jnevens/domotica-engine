@@ -17,6 +17,7 @@
 #include "device.h"
 #include "device_list.h"
 #include "eltako.h"
+#include "eltako_fsb14.h"
 #include "eltako_fts14em.h"
 #include "eltako_fud14.h"
 
@@ -24,6 +25,9 @@ static vsb_client_t *vsb_client;
 
 bool eltako_send(eltako_message_t *msg)
 {
+	if (msg == NULL) {
+		return false;
+	}
 	eltako_frame_t *frame = eltako_message_to_frame(msg);
 	eltako_frame_print(frame);
 	vsb_client_send_data(vsb_client, eltako_frame_get_data(frame), eltako_frame_get_raw_size(frame));
@@ -92,7 +96,7 @@ bool eltako_technology_init(void)
 	eltako_fud14_init();
 	//eltako_fsr14-2x_init();
 	//eltako_fsr14-4x_init();
-	//eltako_fsb14_init();
+	eltako_fsb14_init();
 
 	log_info("Succesfully initialized: eltako!");
 	return true;

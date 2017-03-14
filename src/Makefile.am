@@ -10,6 +10,7 @@ domotica_engine_SOURCES = \
 	device.c \
 	device_list.c \
 	eltako.c \
+	eltako_fsb14.c \
 	eltako_fts14em.c \
 	eltako_fud14.c \
 	engine.c \

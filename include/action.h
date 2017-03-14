@@ -15,7 +15,10 @@
 	X(0,	ACTION_SET,		"SET") \
 	X(1,	ACTION_UNSET,	"UNSET") \
 	X(2,	ACTION_TOGGLE,	"TOGGLE") \
-	X(3,	ACTION_DIM,		"DIM")
+	X(3,	ACTION_DIM,		"DIM") \
+	X(4,	ACTION_UP,		"UP") \
+	X(5,	ACTION_DOWN,	"DOWN") \
+	X(6,	ACTION_STOP,	"STOP")
 
 #define X(a,b,c) b = (1 << a),
 enum action_type {
