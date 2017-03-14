@@ -5,6 +5,7 @@
  *      Author: jnevens
  */
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <bus/log.h>
 
@@ -46,20 +47,23 @@ static technology_t technologies[] = {
 
 bool technologies_init(void)
 {
-	bool ret = false;
+	bool fail = false;
 	int i = 0;
 
 	while(technologies[i].init_fn) {
-		ret = technologies[i].init_fn();
+		bool ret = technologies[i].init_fn();
 		if (ret == true) {
 			log_info("Successfully initialize technology '%s'!", technologies[i].name);
 		} else {
-			log_fatal("Failed to initialize technology '%s'!", technologies[i].name);
-			if (technologies[i].exit_on_fail)
+			if (technologies[i].exit_on_fail == true) {
+				log_fatal("Failed to initialize technology '%s'!", technologies[i].name);
+				fail = true;
 				break;
+			} else {
+				log_err("Failed to initialize technology '%s'!", technologies[i].name);
+			}
 		}
 		i++;
 	}
-
-	return ret;
+	return !fail;
 }
