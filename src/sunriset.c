@@ -222,7 +222,6 @@ static bool sunriset_parser(device_t *device, char *options[])
 		}
 
 		log_info("sunriset: lat: %f lon: %f", sunriset->lat, sunriset->lon);
-		log_info("test");
 
 		device_set_userdata(device, sunriset);
 		sunriset_calculate(device);
