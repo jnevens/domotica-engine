@@ -14,6 +14,7 @@
 #include "technologies.h"
 #include "timer.h"
 #include "sunriset.h"
+#include "dht22.h"
 
 typedef struct {
 	technology_init_fn_t init_fn;
@@ -40,6 +41,11 @@ static technology_t technologies[] = {
 		{
 				.init_fn = sunriset_technology_init,
 				.name = "Sunriset",
+				.exit_on_fail = true,
+		},
+		{
+				.init_fn = dht22_technology_init,
+				.name = "DHT22",
 				.exit_on_fail = true,
 		},
 		{}
