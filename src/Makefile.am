@@ -9,6 +9,7 @@ domotica_engine_SOURCES = \
 	arguments.c \
 	device.c \
 	device_list.c \
+	dht22.c \
 	eltako.c \
 	eltako_fsb14.c \
 	eltako_fts14em.c \
@@ -24,5 +25,6 @@ domotica_engine_SOURCES = \
 	technologies.c \
 	timer.c \
 	utils_gpio.c \
+	utils_sched.c \
 	utils_sunriset.c \
 	utils_time.c
