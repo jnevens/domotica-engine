@@ -193,9 +193,9 @@ static bool gpio_output_exec(device_t *device, action_t *action)
 bool gpio_technology_init(void)
 {
 	event_type_e events = EVENT_PRESS | EVENT_RELEASE | EVENT_SHORT_PRESS | EVENT_LONG_PRESS | EVENT_DIM;
-	device_register_type("GPIO", events, 0, gpio_input_parser, gpio_input_exec);
+	device_register_type("GPI", events, 0, gpio_input_parser, gpio_input_exec);
 	action_type_e actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE;
-	device_register_type("GPIO-OUT", 0, actions, gpio_output_parser, gpio_output_exec);
+	device_register_type("GPO", 0, actions, gpio_output_parser, gpio_output_exec);
 
 	log_info("Succesfully initialized: gpio!");
 	return true;
