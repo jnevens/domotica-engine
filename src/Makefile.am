@@ -21,6 +21,7 @@ domotica_engine_SOURCES = \
 	rule.c \
 	rule_list.c \
 	rule_parser.c \
+	schedule.c \
 	sunriset.c \
 	technologies.c \
 	timer.c \
