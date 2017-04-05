@@ -5,6 +5,7 @@
  *      Author: jnevens
  */
 #include <argp.h>
+#include <string.h>
 #include <stdbool.h>
 
 #include "arguments.h"
@@ -25,7 +26,7 @@ static char args_doc[] = "";
 /* The options we understand. */
 static struct argp_option options[] = {
 		{ "deamonize",	'D',	0,	0,	"Deamonize application" },
-		{ "pid-file",	'p',	0,	0,	"pidfile location" },
+		{ "pidfile",	'p',	"Pidfile", 0, "PID file (default: /var/run/eltakod.pid)" },
 		{ 0 }
 };
 
@@ -39,8 +40,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 	case 'D':
 		arguments->daemonize = true;
 		break;
+	case 'p':
+		arguments->pidfile = arg;
+		break;
 	case ARGP_KEY_ARG:
-		//arguments->pidfile = arg;
 		break;
 	case ARGP_KEY_END:
 		if (state->arg_num >= 1)
