@@ -1,0 +1,17 @@
+SUNRISET PLUGIN
+                               
+SUNRISET name ALTITUDE LATTITUDE
+                               
+triggers the following events: 
+    SUNRISE SUNRISE_CIVIL SUNRISE_NAUTICAL SUNRISE_ASTRONOMICAL                           
+    SUNSET SUNSET_CIVIL SUNSET_NAUTICAL SUNSET_ASTRONOMICAL
+
+Example:
+SUNRISET sr1 50.991816N 4.538554E
+
+IF sr1 SUNRISE
+DO ...
+
+IF sr1 SUNSET_CIVIL
+DO ...
+
