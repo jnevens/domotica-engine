@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 	event_loop_init();
 	// init logging
 	log_init("domotica-engine");
-	log_set_syslog_level(BLOG_WARNING);
+	log_set_syslog_level(BLOG_DEBUG);
 	log_set_print_level(BLOG_DEBUG);
 	// parse arguments
 	arguments_parse(argc, argv);
