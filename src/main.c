@@ -11,6 +11,7 @@
 #include "technologies.h"
 #include "rule_list.h"
 #include "device_list.h"
+#include "utils_time.h"
 
 static void termination_handler(int signum)
 {
@@ -32,11 +33,12 @@ int main(int argc, char *argv[])
 	eu_log_set_print_level(EU_LOG_DEBUG);
 	// parse arguments
 	arguments_parse(argc, argv);
-	// wait for time
-	if (get_current_time_s() < 47*365*24*3600) {
-
+	// wait for system time
+	while (get_current_time_s() < 47*365*24*3600) {
+		eu_log_info("No system time set... waiting");
 		sleep(1);
 	}
+	eu_log_info("System time set!");
 	// parse config file
 	rule_list_init();
 	device_list_init();
