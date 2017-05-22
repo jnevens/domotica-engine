@@ -1,4 +1,3 @@
-
 /*
  * rules_parser.c
  *
@@ -210,7 +209,6 @@ int rules_read_file(const char *file)
 					break;
 				}
 				eu_log_debug("Rule add event: %s %s", ln->name, ln->options[0]);
-
 				event_t *event = event_create(device, event_type);
 				rule_add_event(rule, event);
 				rule_list_add(rule);
