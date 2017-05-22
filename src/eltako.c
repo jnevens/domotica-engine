@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <bus/log.h>
-#include <bus/event.h>
+#include <eu/log.h>
+#include <eu/event.h>
 #include <libvsb/client.h>
 #include <libeltako/frame.h>
 #include <libeltako/message.h>
@@ -53,12 +53,12 @@ static void incoming_data(void *data, size_t len, void *arg)
 	eltako_message_print(msg);
 	device_t *device = device_list_find(device_list_find_cb, (void *)msg);
 	if (device) {
-		log_debug("Input triggered: %s (%s)", device_get_name(device), device_get_type(device));
+		eu_log_debug("Input triggered: %s (%s)", device_get_name(device), device_get_type(device));
 		if (strcmp(device_get_type(device), "FTS14EM") == 0) {
 			eltako_fts14em_incoming_data(msg, device);
 		}
 	} else {
-		log_debug("ignore eltako message from 0x%x", eltako_message_get_address(msg));
+		eu_log_debug("ignore eltako message from 0x%x", eltako_message_get_address(msg));
 	}
 
 	eltako_message_destroy(msg);
@@ -73,7 +73,7 @@ static void handle_incoming_event(int fd, short int revents, void *arg)
 
 void handle_connection_disconnect(void *arg)
 {
-	log_err("Connection lost with server!\n");
+	eu_log_err("Connection lost with server!\n");
 }
 
 static bool eltako_connect_with_eltakod(void)
@@ -81,14 +81,14 @@ static bool eltako_connect_with_eltakod(void)
 	vsb_client = vsb_client_init("/var/run/eltako.socket", "domotica-engine");
 	int eltako_fd = vsb_client_get_fd(vsb_client);
 	vsb_client_register_incoming_data_cb(vsb_client, incoming_data, NULL);
-	event_add(eltako_fd, POLLIN, handle_incoming_event, NULL, vsb_client);
+	eu_event_add(eltako_fd, POLLIN, handle_incoming_event, NULL, vsb_client);
 	vsb_client_register_disconnect_cb(vsb_client, handle_connection_disconnect, NULL);
 }
 
 bool eltako_technology_init(void)
 {
 	if(eltako_connect_with_eltakod()) {
-		log_err("Failed to connect to eltakod!");
+		eu_log_err("Failed to connect to eltakod!");
 		return false;
 	}
 
@@ -98,6 +98,6 @@ bool eltako_technology_init(void)
 	//eltako_fsr14-4x_init();
 	eltako_fsb14_init();
 
-	log_info("Succesfully initialized: eltako!");
+	eu_log_info("Succesfully initialized: eltako!");
 	return true;
 }

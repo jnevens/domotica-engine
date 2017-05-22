@@ -6,7 +6,7 @@
  */
 #include <stdio.h>
 
-#include <bus/log.h>
+#include <eu/log.h>
 
 #include "action.h"
 #include "rule_list.h"

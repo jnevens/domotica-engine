@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <bus/log.h>
+#include <eu/log.h>
 
 #include "device.h"
 #include "event.h"
@@ -78,12 +78,12 @@ event_type_e event_type_from_char(const char *name) {
 		}
 		i++;
 	}
-	log_err("Cannot find event type: %s", name);
+	eu_log_err("Cannot find event type: %s", name);
 	return -1;
 }
 
 void event_print(event_t *event)
 {
 	device_t *device = (device_t *) event->device;
-	log_info("event: device: %s, type: %s", device_get_name(device), event_get_name(event));
+	eu_log_info("event: device: %s, type: %s", device_get_name(device), event_get_name(event));
 }

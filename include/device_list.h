@@ -9,13 +9,13 @@
 #define DEVICE_LIST_H_
 
 #include <stdbool.h>
-#include <bus/list.h>
+#include <eu/list.h>
 #include "types.h"
 
 typedef bool (*device_list_find_fn_t)(device_t *device, void *arg);
 
 bool device_list_init(void);
-list_t *device_list_get(void);
+eu_list_t *device_list_get(void);
 void device_list_destroy(void);
 
 bool device_list_add(device_t *device);

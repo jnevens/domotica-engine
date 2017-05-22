@@ -40,6 +40,15 @@ void sleep_milliseconds(uint32_t millis)
 		;
 }
 
+uint64_t get_current_time_s(void)
+{
+	uint64_t ret;
+	struct timeval now;
+	gettimeofday(&now, NULL);
+
+	return now.tv_sec;
+}
+
 uint64_t get_current_time_ms(void)
 {
 	uint64_t ret;

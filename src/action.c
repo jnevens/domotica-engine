@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <bus/log.h>
+#include <eu/log.h>
 
 #include "device.h"
 #include "action.h"
@@ -29,7 +29,7 @@ static char *action_type_name[] = {
 action_t *action_create(device_t *device, action_type_e action_type, char *options[])
 {
 	if (!(device_get_supported_action(device) & action_type)) {
-		log_fatal("device %s does not support action: %s", device_get_name(device), action_type_to_char(action_type));
+		eu_log_fatal("device %s does not support action: %s", device_get_name(device), action_type_to_char(action_type));
 		return NULL;
 	}
 
@@ -53,7 +53,7 @@ action_type_e action_get_type(action_t *action)
 void action_print(action_t *action)
 {
 	device_t *device = action->device;
-	log_info("action: device: %s, type: %s", device_get_name(device), action_type_to_char(action->type));
+	eu_log_info("action: device: %s, type: %s", device_get_name(device), action_type_to_char(action->type));
 }
 
 action_type_e action_type_from_char(const char *type_str)
@@ -69,7 +69,7 @@ action_type_e action_type_from_char(const char *type_str)
 		}
 		i++;
 	}
-	log_err("Cannot find action type: %s", type_str);
+	eu_log_err("Cannot find action type: %s", type_str);
 	return -1;
 }
 

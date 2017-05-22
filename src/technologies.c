@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include <bus/log.h>
+#include <eu/log.h>
 
 #include "eltako.h"
 #include "gpio.h"
@@ -59,14 +59,14 @@ bool technologies_init(void)
 	while(technologies[i].init_fn) {
 		bool ret = technologies[i].init_fn();
 		if (ret == true) {
-			log_info("Successfully initialize technology '%s'!", technologies[i].name);
+			eu_log_info("Successfully initialize technology '%s'!", technologies[i].name);
 		} else {
 			if (technologies[i].exit_on_fail == true) {
-				log_fatal("Failed to initialize technology '%s'!", technologies[i].name);
+				eu_log_fatal("Failed to initialize technology '%s'!", technologies[i].name);
 				fail = true;
 				break;
 			} else {
-				log_err("Failed to initialize technology '%s'!", technologies[i].name);
+				eu_log_err("Failed to initialize technology '%s'!", technologies[i].name);
 			}
 		}
 		i++;

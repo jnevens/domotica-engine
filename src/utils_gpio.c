@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <bus/log.h>
+#include <eu/log.h>
 
 #include "utils_gpio.h"
 
@@ -31,7 +31,7 @@ int gpio_export(int pin)
 	bytes_written = snprintf(buffer, sizeof(buffer), "%d", pin);
 	write(fd, buffer, bytes_written);
 	close(fd);
-	log_info("gpio exported: %d", pin);
+	eu_log_info("gpio exported: %d", pin);
 	return(0);
 }
 
@@ -66,7 +66,7 @@ int gpio_fd_open(int pin)
 		return (-1);
 	}
 
-	log_info("gpio open: fd: %d", fd);
+	eu_log_info("gpio open: fd: %d", fd);
 
 	return fd;
 }

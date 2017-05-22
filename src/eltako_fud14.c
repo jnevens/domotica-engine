@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <bus/log.h>
+#include <eu/log.h>
 #include <libeltako/message.h>
 #include <libeltako/dimmer.h>
 
@@ -38,7 +38,7 @@ static bool fud14_device_parser(device_t *device, char *options[])
 		fud14->dim_max_value = 100;
 		fud14->dim_interval = 3;
 		device_set_userdata(device, fud14);
-		log_debug("FUD14 device created (name: %s, address: 0x%x)", device_get_name(device), fud14->address);
+		eu_log_debug("FUD14 device created (name: %s, address: 0x%x)", device_get_name(device), fud14->address);
 		return true;
 	}
 	return false;
@@ -48,7 +48,7 @@ static bool fud14_device_exec(device_t *device, action_t *action)
 {
 	device_fud14_t *fud14 = device_get_userdata(device);
 	eltako_message_t *msg = NULL;
-	log_info("set fud14 device: %s, type: %s", device_get_name(device), action_type_to_char(action_get_type(action)));
+	eu_log_info("set fud14 device: %s, type: %s", device_get_name(device), action_type_to_char(action_get_type(action)));
 
 	switch (action_get_type(action)) {
 	case ACTION_SET:
@@ -86,7 +86,7 @@ static bool fud14_device_exec(device_t *device, action_t *action)
 	default:
 		return false;
 	}
-	log_info("set fud14 device: %s, type: %s, new value: %d", device_get_name(device),
+	eu_log_info("set fud14 device: %s, type: %s, new value: %d", device_get_name(device),
 			action_type_to_char(action_get_type(action)), fud14->dim_value);
 	return eltako_send(msg);
 }

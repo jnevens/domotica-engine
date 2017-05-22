@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <bus/log.h>
-#include <bus/list.h>
+#include <eu/log.h>
+#include <eu/list.h>
 
 #include "action.h"
 #include "event.h"
@@ -30,7 +30,7 @@ struct device_s {
 	void *userdata;
 };
 
-static list_t *device_types;
+static eu_list_t *device_types;
 
 device_t *device_create(char *name, const char *devtype, char *options[])
 {
@@ -39,15 +39,15 @@ device_t *device_create(char *name, const char *devtype, char *options[])
 
 	// lookup device type
 	if(options[0] != NULL) {
-		list_node_t *node;
-		list_for_each(node, device_types) {
-			device_type_t *device_type = list_node_data(node);
+		eu_list_node_t *node;
+		eu_list_for_each(node, device_types) {
+			device_type_t *device_type = eu_list_node_data(node);
 			if (strcmp(device_type->name, devtype) == 0) {
 				if(device_type->parse_cb(device, options)) {
 					device->device_type = device_type;
 					goto finish;
 				}
-				log_err("Failed to parse device: %s", name);
+				eu_log_err("Failed to parse device: %s", name);
 				break;
 			}
 		}
@@ -78,15 +78,15 @@ void *device_get_userdata(device_t *device)
 
 bool device_set(device_t *device, action_t *action)
 {
-	list_node_t *node;
+	eu_list_node_t *node;
 
-	list_for_each(node, device_types) {
-		device_type_t *device_type = list_node_data(node);
+	eu_list_for_each(node, device_types) {
+		device_type_t *device_type = eu_list_node_data(node);
 		if (device_type == device->device_type) {
 			if (action_get_type(action) & device_type->actions) {
 				device_type->exec_cb(device, action);
 			} else {
-				log_err("Action type: %s not supported for device: %s",
+				eu_log_err("Action type: %s not supported for device: %s",
 						action_type_to_char(action_get_type(action)), device_get_name(device));
 			}
 		}
@@ -96,7 +96,7 @@ bool device_set(device_t *device, action_t *action)
 void device_trigger_event(device_t *device, event_type_e event_type)
 {
 	event_t *event = event_create(device, event_type);
-	log_info("Event: device: %s, event: %s", device_get_name(device), event_get_name(event));
+	eu_log_info("Event: device: %s, event: %s", device_get_name(device), event_get_name(event));
 	engine_trigger_event(event);
 	event_delete(event);
 }
@@ -105,7 +105,7 @@ bool device_register_type(const char *name, event_type_e events, action_type_e a
 		device_parse_fn_t parse_cb, device_exec_fn_t exec_cb)
 {
 	if (!device_types) {
-		device_types = list_create();
+		device_types = eu_list_create();
 	}
 
 	device_type_t *type = calloc(1, sizeof(device_type_t));
@@ -114,9 +114,9 @@ bool device_register_type(const char *name, event_type_e events, action_type_e a
 	type->parse_cb = parse_cb;
 	type->exec_cb = exec_cb;
 
-	log_info("Register device type: %s", name);
+	eu_log_info("Register device type: %s", name);
 
-	list_append(device_types, type);
+	eu_list_append(device_types, type);
 	return true;
 }
 

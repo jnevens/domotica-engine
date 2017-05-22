@@ -11,9 +11,9 @@
 #include <error.h>
 #include <errno.h>
 
-#include <bus/log.h>
-#include <bus/event.h>
-#include <bus/timer.h>
+#include <eu/log.h>
+#include <eu/event.h>
+#include <eu/timer.h>
 
 #include "event.h"
 #include "action.h"
@@ -29,7 +29,7 @@ typedef struct {
 	int fd;
 	uint64_t last_time_ms;
 	uint64_t press_time;
-	event_timer_t *timer;
+	eu_event_timer_t *timer;
 } gpio_t;
 
 bool gpio_input_dim_press_timer_cb(void *arg)
@@ -43,7 +43,7 @@ bool gpio_input_dim_press_timer_cb(void *arg)
 
 	device_trigger_event(device, EVENT_DIM);
 
-	return event_timer_continue;
+	return eu_event_timer_continue;
 }
 
 bool gpio_input_short_press_timer_cb(void *arg)
@@ -55,9 +55,9 @@ bool gpio_input_short_press_timer_cb(void *arg)
 	device_trigger_event(device, EVENT_DIM);
 
 	gpio_input->timer = NULL;
-	gpio_input->timer = event_timer_create(PRESS_DIM_INTERVAL_TIME_MS, gpio_input_dim_press_timer_cb, device);
+	gpio_input->timer = eu_event_timer_create(PRESS_DIM_INTERVAL_TIME_MS, gpio_input_dim_press_timer_cb, device);
 
-	return event_timer_stop;
+	return eu_event_timer_stop;
 }
 
 void gpio_input_handle_edge(device_t *device)
@@ -70,19 +70,19 @@ void gpio_input_handle_edge(device_t *device)
 		device_trigger_event(device, EVENT_PRESS);
 
 		if (input_gpio->timer) {
-			event_timer_destroy(input_gpio->timer);
+			eu_event_timer_destroy(input_gpio->timer);
 		}
-		input_gpio->timer = event_timer_create(SHORT_PRESS_MAX_TIME_MS, gpio_input_short_press_timer_cb, device);
+		input_gpio->timer = eu_event_timer_create(SHORT_PRESS_MAX_TIME_MS, gpio_input_short_press_timer_cb, device);
 	} else {
 		uint64_t press_time = input_gpio->press_time;
 		uint64_t release_time = get_current_time_ms();
 		uint64_t press_duration = release_time - press_time;
-		log_debug("press_duration: %dms", press_duration);
+		eu_log_debug("press_duration: %dms", press_duration);
 
 		device_trigger_event(device, EVENT_RELEASE);
 
 		if (input_gpio->timer) {
-			event_timer_destroy(input_gpio->timer);
+			eu_event_timer_destroy(input_gpio->timer);
 		}
 		input_gpio->timer = NULL;
 
@@ -137,9 +137,9 @@ static bool gpio_input_parser(device_t *device, char *options[])
 		gpio_input->value = gpio_get_value(gpio_input->pin);
 
 		gpio_input->fd = gpio_fd_open(gpio_input->pin);
-		event_add(gpio_input->fd, POLLPRI, gpio_input_edge_detected_cb, NULL,device);
+		eu_event_add(gpio_input->fd, POLLPRI, gpio_input_edge_detected_cb, NULL,device);
 
-		log_info("GPIO input created (name: %s, pin: %d)", device_get_name(device), gpio_input->pin);
+		eu_log_info("GPIO input created (name: %s, pin: %d)", device_get_name(device), gpio_input->pin);
 		return true;
 	}
 	return false;
@@ -160,7 +160,7 @@ static bool gpio_output_parser(device_t *device, char *options[])
 		gpio_set_direction(gpio_output->pin, GPIO_DIR_OUT);
 		gpio_set_value(gpio_output->pin, GPIO_VAL_LOW);
 		gpio_output->value = GPIO_VAL_LOW;
-		log_info("GPIO output created (name: %s, pin: %d)", device_get_name(device), gpio_output->pin);
+		eu_log_info("GPIO output created (name: %s, pin: %d)", device_get_name(device), gpio_output->pin);
 		return true;
 	}
 	return false;
@@ -185,7 +185,7 @@ static bool gpio_output_exec(device_t *device, action_t *action)
 		gpio_set_value(output_gpio->pin, output_gpio->value);
 		break;
 	}
-	log_debug("gpio %s(%d) set to: %d", device_get_name(device), output_gpio->pin, output_gpio->value);
+	eu_log_debug("gpio %s(%d) set to: %d", device_get_name(device), output_gpio->pin, output_gpio->value);
 
 	return false;
 }
@@ -197,6 +197,6 @@ bool gpio_technology_init(void)
 	action_type_e actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE;
 	device_register_type("GPO", 0, actions, gpio_output_parser, gpio_output_exec);
 
-	log_info("Succesfully initialized: gpio!");
+	eu_log_info("Succesfully initialized: gpio!");
 	return true;
 }

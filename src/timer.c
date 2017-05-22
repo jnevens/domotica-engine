@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <bus/log.h>
-#include <bus/event.h>
-#include <bus/timer.h>
+#include <eu/log.h>
+#include <eu/event.h>
+#include <eu/timer.h>
 
 #include "timer.h"
 #include "device.h"
@@ -18,12 +18,12 @@
 
 typedef struct {
 	uint64_t timeout_ms;
-	event_timer_t *timer;
+	eu_event_timer_t *timer;
 } tmr_t;
 
 static bool timer_device_parser(device_t *device, char *options[])
 {
-	log_debug("parse timer %s!", device_get_name(device));
+	eu_log_debug("parse timer %s!", device_get_name(device));
 	tmr_t *tmr = calloc(1, sizeof(tmr_t));
 	if (tmr) {
 		tmr->timeout_ms = 10000;
@@ -50,14 +50,14 @@ static bool timer_device_exec(device_t *device, action_t *action)
 	switch (action_get_type(action)) {
 	case ACTION_SET:
 		if (tmr->timer) {
-			event_timer_destroy(tmr->timer);
+			eu_event_timer_destroy(tmr->timer);
 			tmr->timer = NULL;
 		}
-		tmr->timer = event_timer_create(tmr->timeout_ms, tmr_timeout, device);
+		tmr->timer = eu_event_timer_create(tmr->timeout_ms, tmr_timeout, device);
 		break;
 	case ACTION_UNSET:
 		if (tmr->timer) {
-			event_timer_destroy(tmr->timer);
+			eu_event_timer_destroy(tmr->timer);
 			tmr->timer = NULL;
 		}
 		break;
@@ -72,6 +72,6 @@ bool timer_technology_init(void)
 	action_type_e actions = ACTION_SET | ACTION_UNSET;
 	device_register_type("TIMER", events, actions, timer_device_parser, timer_device_exec);
 
-	log_info("Succesfully initialized: Timers!");
+	eu_log_info("Succesfully initialized: Timers!");
 	return true;
 }

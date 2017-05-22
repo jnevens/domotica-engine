@@ -16,9 +16,9 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#include <bus/log.h>
-#include <bus/event.h>
-#include <bus/timer.h>
+#include <eu/log.h>
+#include <eu/event.h>
+#include <eu/timer.h>
 
 #include "utils_sched.h"
 #include "utils_time.h"
@@ -29,7 +29,7 @@
 
 typedef struct {
 	int gpio;
-	event_timer_t *timer;
+	eu_event_timer_t *timer;
 	time_t period;
 	float temperature;
 	float humidity;
@@ -162,7 +162,7 @@ static bool dht22_read_part2(void *arg)
 		if (++count >= DHT_MAXCOUNT) {
 			// Timeout waiting for response.
 			sched_set_default_priority();
-			log_err("DHT22 timeout!");
+			eu_log_err("DHT22 timeout!");
 			return false;
 		}
 	}
@@ -174,7 +174,7 @@ static bool dht22_read_part2(void *arg)
 			if (++pulseCounts[i] >= DHT_MAXCOUNT) {
 				// Timeout waiting for response.
 				sched_set_default_priority();
-				log_err("DHT22 timeout!");
+				eu_log_err("DHT22 timeout!");
 				return false;
 			}
 		}
@@ -183,7 +183,7 @@ static bool dht22_read_part2(void *arg)
 			if (++pulseCounts[i + 1] >= DHT_MAXCOUNT) {
 				// Timeout waiting for response.
 				sched_set_default_priority();
-				log_err("DHT22 timeout!");
+				eu_log_err("DHT22 timeout!");
 				return false;
 			}
 		}
@@ -247,7 +247,7 @@ static bool dht22_read_part2(void *arg)
 		device_trigger_event(device, EVENT_TEMPERATURE);
 		device_trigger_event(device, EVENT_HUMIDITY);
 	} else {
-		log_err("DHT22 checksum error!");
+		eu_log_err("DHT22 checksum error!");
 	}
 
 	return false;
@@ -269,7 +269,7 @@ static int dht22_read(device_t *device)
 	// Set pin high for ~500 milliseconds.
 	pi_2_mmio_set_high(pin);
 
-	event_timer_create(500, dht22_read_part2, device);
+	eu_event_timer_create(500, dht22_read_part2, device);
 }
 
 static void dht22_read_schedule(device_t *device);
@@ -291,16 +291,16 @@ static void dht22_read_schedule(device_t *device)
 	time_t ct = time(NULL);
 	time_t delay = dht22->period - (ct % dht22->period);
 
-	log_debug("schedule DHT22 read in: %ds", delay);
+	eu_log_debug("schedule DHT22 read in: %ds", delay);
 
-	event_timer_create(delay * 1000, dht22_read_schedule_callback, device);
+	eu_event_timer_create(delay * 1000, dht22_read_schedule_callback, device);
 }
 
 static bool dht22_parser(device_t *device, char *options[])
 {
 	bool rv = false;
 	int gpio = atoi(options[1]);
-	log_debug("gpio: %d", gpio);
+	eu_log_debug("gpio: %d", gpio);
 
 	dht22_t *dht22 = calloc(1, sizeof(dht22));
 	dht22->gpio = gpio;
@@ -321,6 +321,6 @@ bool dht22_technology_init()
 	action_type_e actions = 0;
 	device_register_type("DHT22", events, actions, dht22_parser, NULL);
 
-	log_info("Succesfully initialized: Sunriset!");
+	eu_log_info("Succesfully initialized: Sunriset!");
 	return true;
 }

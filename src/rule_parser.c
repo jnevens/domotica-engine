@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <bus/log.h>
+#include <eu/log.h>
 
 #include "event.h"
 #include "action.h"
@@ -151,10 +151,10 @@ int rules_read_file(const char *file)
 {
 	FILE *fp;
 	int line_nr = 1, ret = 0;
-	log_info("read rules file: %s", file);
+	eu_log_info("read rules file: %s", file);
 
 	if (NULL == (fp = fopen(file, "r"))) {
-		log_err("Failed to open file: %s", strerror(errno));
+		eu_log_err("Failed to open file: %s", strerror(errno));
 		return -1;
 	}
 
@@ -165,103 +165,101 @@ int rules_read_file(const char *file)
 		line_t *ln = line_parse(line);
 
 		if (ln) {
-			bool schedule_line = false;
 			if (schedule) {
 				if (schedule_parse_line(schedule, ln->raw)) {
-					schedule_line = true;
+					continue;
 				} else {
-					log_debug("finished reading schedule!");
-					schedule = NULL;
-				}
-			}
-
-			if (!schedule_line) {
-				switch (ln->statement) {
-				case STATEMENT_INPUT:
-				case STATEMENT_OUTPUT:
-				case STATEMENT_SUNRISET:
-				case STATEMENT_TIMER: {
-					const char *devtype = ln->options[0];
-					if (ln->statement == STATEMENT_TIMER)
-						devtype = "TIMER";
-					if (ln->statement == STATEMENT_SUNRISET)
-						devtype = "SUNRISET";
-					device_t *device = device_create(ln->name, devtype, ln->options);
-					if (device) {
-						device_list_add(device);
-					} else {
-						log_fatal("Failed to parse device: %s (%s:%d)", ln->name, file, line_nr);
-						ret = -1;
-					}
-					break;
-				}
-				case STATEMENT_IF: {
-					log_debug("Create rule");
-					rule = rule_create();
-					device_t *device = device_list_find_by_name(ln->name);
-					if (!device) {
-						log_err("Cannot find device: %s", ln->name);
-						ret = -1;
-						break;
-					}
-					event_type_e event_type = event_type_from_char(ln->options[0]);
-					if (event_type == -1) {
-						log_err("Event '%s' does not exist!", ln->options[0]);
-						ret = -1;
-						break;
-					}
-					log_debug("Rule add event: %s %s", ln->name, ln->options[0]);
-
-					event_t *event = event_create(device, event_type);
-					rule_add_event(rule, event);
-					rule_list_add(rule);
-					break;
-				}
-				case STATEMENT_AND: {
-					log_debug("Rule add condition: %s %s", ln->name, ln->options[0]);
-					rule_add_condition(rule, ln->name, ln->options[0]);
-					break;
-				}
-				case STATEMENT_DO: {
-					log_debug("Rule add action: %s %s", ln->name, ln->options[0]);
-					if (!rule) {
-						log_fatal("No IF before DO! (%s:%d)", file, line_nr);
-					}
-					device_t *device = device_list_find_by_name(ln->name);
-					if (!device) {
-						log_err("Cannot find device: %s", ln->name);
-						ret = -1;
-						break;
-					}
-					action_type_e action_type = action_type_from_char(ln->options[0]);
-					if (action_type == -1) {
-						log_err("Action '%s' does not exist!", ln->options[0]);
-						ret = -1;
-						break;
-					}
-					action_t *action = action_create(device, action_type, ln->options);
-					rule_add_action(rule, action);
-					break;
-				}
-				case STATEMENT_SCHEDULE: {
-					log_debug("Create schedule: %s %s", ln->name, ln->options[0]);
-					schedule = schedule_create(ln->name, ln->options[0]);
-					if (!schedule) {
-						log_fatal("Failed to parse schedule: %s (%s:%d)", ln->name, file, line_nr);
-						ret = -1;
-					}
-					break;
-				}
-				default: {
-					log_fatal("Failed to parse device (invalid action): %s (%s:%d)", ln->name, file, line_nr);
+					eu_log_fatal("Failed to parse device (invalid action): %s (%s:%d)", ln->name, file, line_nr);
 					ret = -1;
 					break;
 				}
-				}
-				if (ret)
-					break;
 			}
-				//log_info("%s", line);
+
+			switch (ln->statement) {
+			case STATEMENT_INPUT:
+			case STATEMENT_OUTPUT:
+			case STATEMENT_SUNRISET:
+			case STATEMENT_TIMER: {
+				const char *devtype = ln->options[0];
+				if (ln->statement == STATEMENT_TIMER)
+					devtype = "TIMER";
+				if (ln->statement == STATEMENT_SUNRISET)
+					devtype = "SUNRISET";
+				device_t *device = device_create(ln->name, devtype, ln->options);
+				if (device) {
+					device_list_add(device);
+				} else {
+					eu_log_fatal("Failed to parse device: %s (%s:%d)", ln->name, file, line_nr);
+					ret = -1;
+				}
+				break;
+			}
+			case STATEMENT_IF: {
+				eu_log_debug("Create rule");
+				rule = rule_create();
+				device_t *device = device_list_find_by_name(ln->name);
+				if (!device) {
+					eu_log_err("Cannot find device: %s", ln->name);
+					ret = -1;
+					break;
+				}
+				event_type_e event_type = event_type_from_char(ln->options[0]);
+				if (event_type == -1) {
+					eu_log_err("Event '%s' does not exist!", ln->options[0]);
+					ret = -1;
+					break;
+				}
+				eu_log_debug("Rule add event: %s %s", ln->name, ln->options[0]);
+
+				event_t *event = event_create(device, event_type);
+				rule_add_event(rule, event);
+				rule_list_add(rule);
+				break;
+			}
+			case STATEMENT_AND: {
+				eu_log_debug("Rule add condition: %s %s", ln->name, ln->options[0]);
+				rule_add_condition(rule, ln->name, ln->options[0]);
+				break;
+			}
+			case STATEMENT_DO: {
+				eu_log_debug("Rule add action: %s %s", ln->name, ln->options[0]);
+				if (!rule) {
+					eu_log_fatal("No IF before DO! (%s:%d)", file, line_nr);
+				}
+				device_t *device = device_list_find_by_name(ln->name);
+				if (!device) {
+					eu_log_err("Cannot find device: %s", ln->name);
+					ret = -1;
+					break;
+				}
+				action_type_e action_type = action_type_from_char(ln->options[0]);
+				if (action_type == -1) {
+					eu_log_err("Action '%s' does not exist!", ln->options[0]);
+					ret = -1;
+					break;
+				}
+				action_t *action = action_create(device, action_type, ln->options);
+				rule_add_action(rule, action);
+				break;
+			}
+			case STATEMENT_SCHEDULE: {
+				eu_log_debug("Create schedule: %s %s", ln->name, ln->options[0]);
+				schedule = schedule_create(ln->name, ln->options[0]);
+				if (!schedule) {
+					eu_log_fatal("Failed to parse schedule: %s (%s:%d)", ln->name, file, line_nr);
+					ret = -1;
+				}
+				break;
+			}
+			default: {
+				eu_log_fatal("Failed to parse device (invalid action): %s (%s:%d)", ln->name, file, line_nr);
+				ret = -1;
+				break;
+			}
+			}
+			if (ret)
+				break;
+			//eu_log_info("%s", line);
 		} else {
 			rule = NULL;
 			schedule = NULL;
@@ -281,11 +279,11 @@ int rules_read_dir(const char *dir)
 	char buffer[BUFSIZ];
 	int ret = -1, files_read = 0;
 
-	log_info("read rules directory: %s", dir);
+	eu_log_info("read rules directory: %s", dir);
 
 	/* Scanning the in directory */
 	if (NULL == (FD = opendir(dir))) {
-		log_err("Failed to open rules directory: %s", strerror(errno));
+		eu_log_err("Failed to open rules directory: %s", strerror(errno));
 		return -1;
 	}
 
@@ -300,7 +298,7 @@ int rules_read_dir(const char *dir)
 			continue;
 
 		if(asprintf(&file_path, "%s/%s", dir, in_file->d_name) <= 0) {
-			log_err("asprintf failed: %s", strerror(errno));
+			eu_log_err("asprintf failed: %s", strerror(errno));
 			break;
 		}
 

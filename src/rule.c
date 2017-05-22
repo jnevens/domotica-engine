@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <bus/log.h>
-#include <bus/list.h>
+#include <eu/log.h>
+#include <eu/list.h>
 
 #include "device.h"
 #include "rule.h"
@@ -18,14 +18,14 @@
 
 struct rule_s {
 	event_t *event;
-	list_t *actions;
+	eu_list_t *actions;
 	int count;
 };
 
 rule_t *rule_create(void)
 {
 	rule_t *rule = calloc(1, sizeof(rule_t));
-	rule->actions = list_create();
+	rule->actions = eu_list_create();
 
 	return rule;
 }
@@ -56,7 +56,7 @@ bool rule_add_action(rule_t *rule, action_t *action)
 		return false;
 	}
 
-	list_append(rule->actions, action);
+	eu_list_append(rule->actions, action);
 	return true;
 }
 
@@ -67,26 +67,26 @@ event_t *rule_get_event(rule_t *rule)
 
 void rule_foreach_action(rule_t *rule, rule_action_iter_fn_t action_cb, void *arg)
 {
-	list_node_t *node;
+	eu_list_node_t *node;
 
-	list_for_each(node, rule->actions)
+	eu_list_for_each(node, rule->actions)
 	{
-		action_t *action = list_node_data(node);
+		action_t *action = eu_list_node_data(node);
 		action_cb(action, arg);
 	}
 }
 
 void rule_print(rule_t *rule)
 {
-	list_node_t *node;
+	eu_list_node_t *node;
 	event_t *event = rule->event;
 
-	log_debug("print rule:");
+	eu_log_debug("print rule:");
 	event_print(event);
 
-	list_for_each(node, rule->actions)
+	eu_list_for_each(node, rule->actions)
 	{
-		action_t *action = list_node_data(node);
+		action_t *action = eu_list_node_data(node);
 		action_print(action);
 	}
 

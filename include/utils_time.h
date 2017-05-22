@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 
+uint64_t get_current_time_s(void);
 uint64_t get_current_time_ms(void);
 uint64_t get_current_time_us(void);
 

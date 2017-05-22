@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <bus/log.h>
+#include <eu/log.h>
 #include <libeltako/message.h>
 #include <libeltako/dimmer.h>
 
@@ -30,7 +30,7 @@ static bool fsb14_device_parser(device_t *device, char *options[])
 		fsb14->address = strtoll(options[1], NULL, 16);
 		fsb14->duration = strtoll(options[2], NULL, 10);
 		device_set_userdata(device, fsb14);
-		log_debug("FSB14 device created (name: %s, address: 0x%x, duration: %d)", device_get_name(device),
+		eu_log_debug("FSB14 device created (name: %s, address: 0x%x, duration: %d)", device_get_name(device),
 				fsb14->address, fsb14->duration);
 		return true;
 	}
@@ -62,7 +62,7 @@ static bool fsb14_device_exec(device_t *device, action_t *action)
 	default:
 		return false;
 	}
-	log_info("set fsb14 device: %s, type: %s", device_get_name(device), action_type_to_char(action_get_type(action)));
+	eu_log_info("set fsb14 device: %s, type: %s", device_get_name(device), action_type_to_char(action_get_type(action)));
 	return eltako_send(msg);
 }
 

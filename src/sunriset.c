@@ -11,9 +11,9 @@
 #include <math.h>
 #include <time.h>
 
-#include <bus/log.h>
-#include <bus/event.h>
-#include <bus/timer.h>
+#include <eu/log.h>
+#include <eu/event.h>
+#include <eu/timer.h>
 
 #include "utils_sunriset.h"
 #include "device.h"
@@ -36,8 +36,8 @@ typedef enum {
 typedef struct {
 	double lat;
 	double lon;
-	event_timer_t *midnight;
-	event_timer_t *sunriset_timers[SUNRISET_EVENT_COUNT];
+	eu_event_timer_t *midnight;
+	eu_event_timer_t *sunriset_timers[SUNRISET_EVENT_COUNT];
 } sunriset_t;
 
 typedef struct {
@@ -97,20 +97,20 @@ static void sunriset_create_event_timer(device_t *device, sunriset_event_e se, i
 	tm->tm_hour = hour;
 	et = mktime(tm);
 
-	log_debug("Schedule event: %d @%02d:%02dh UTC in %ds", se, hour, min, et - ct);
+	eu_log_debug("Schedule event: %d @%02d:%02dh UTC in %ds", se, hour, min, et - ct);
 
 	if (et > ct) {
-		log_debug("Event in future: %ds", et - ct);
+		eu_log_debug("Event in future: %ds", et - ct);
 		if (sr->sunriset_timers[se]) {
-			free(event_timer_get_userdata(sr->sunriset_timers[se]));
-			event_timer_destroy(sr->sunriset_timers[se]);
+			free(eu_event_timer_get_userdata(sr->sunriset_timers[se]));
+			eu_event_timer_destroy(sr->sunriset_timers[se]);
 		}
 		sunriset_event_t *sunevent = calloc(1, sizeof(sunriset_event_t));
 		sunevent->device = device;
 		sunevent->se = se;
-		sr->sunriset_timers[se] = event_timer_create((et - ct) * 1000, sunriset_event_callback, sunevent);
+		sr->sunriset_timers[se] = eu_event_timer_create((et - ct) * 1000, sunriset_event_callback, sunevent);
 	} else {
-		log_notice("Event already in history!");
+		eu_log_notice("Event already in history!");
 	}
 }
 
@@ -134,24 +134,24 @@ static void sunriset_calculate(device_t *device)
 	month = 1 + tm->tm_mon;
 	day = 1 + tm->tm_mday;
 
-	log_debug("date: %d-%d-%d", year, month, day);
+	eu_log_debug("date: %d-%d-%d", year, month, day);
 
 	sun_rise_set(year, month, day, sr->lon, sr->lat, &rise, &set);
 	civil_twilight(year, month, day, sr->lon, sr->lat, &rise_civ, &set_civ);
 	nautical_twilight(year, month, day, sr->lon, sr->lat, &rise_naut, &set_naut);
 	astronomical_twilight(year, month, day, sr->lon, sr->lat, &rise_astr, &set_astr);
 
-	log_info( "sunrise:              %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
+	eu_log_info( "sunrise:              %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
 		TMOD(HOURS(rise)), MINUTES(rise),
 		TMOD(HOURS(set)), MINUTES(set));
 
-	log_info( "sunrise civilian:     %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
+	eu_log_info( "sunrise civilian:     %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
 		TMOD(HOURS(rise_civ)), MINUTES(rise_civ),
 		TMOD(HOURS(set_civ)), MINUTES(set_civ));
-	log_info( "sunrise nautical:     %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
+	eu_log_info( "sunrise nautical:     %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
 		TMOD(HOURS(rise_naut)), MINUTES(rise_naut),
 		TMOD(HOURS(set_naut)), MINUTES(set_naut));
-	log_info( "sunrise astronomical: %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
+	eu_log_info( "sunrise astronomical: %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
 		TMOD(HOURS(rise_astr)), MINUTES(rise_astr),
 		TMOD(HOURS(set_astr)), MINUTES(set_astr));
 
@@ -186,19 +186,19 @@ static void sunriset_calculate_next_run(device_t *device)
 	tm->tm_hour = 0;
 	tm->tm_mday++;
 	nrt = mktime(tm);
-	log_debug("Next day start in: %d seconds", nrt - ct);
+	eu_log_debug("Next day start in: %d seconds", nrt - ct);
 
-	sr->midnight = event_timer_create((nrt - ct) * 1000, sunriset_next_run_callback, device);
+	sr->midnight = eu_event_timer_create((nrt - ct) * 1000, sunriset_next_run_callback, device);
 }
 
 static bool sunriset_parser(device_t *device, char *options[])
 {
-	log_debug("parse sunriset %s!", device_get_name(device));
+	eu_log_debug("parse sunriset %s!", device_get_name(device));
 	sunriset_t *sunriset = calloc(1, sizeof(sunriset_t));
 	if (sunriset) {
 		double temp;
 		int hemisphere;
-		log_debug("%s %s", options[0], options[1]);
+		eu_log_debug("%s %s", options[0], options[1]);
 
 		if (2 == sscanf(options[0], "%lf%1[Nn]", &temp, &hemisphere)) {
 			sunriset->lat = temp;
@@ -221,7 +221,7 @@ static bool sunriset_parser(device_t *device, char *options[])
 			//coords_set |= LON_SET;
 		}
 
-		log_info("sunriset: lat: %f lon: %f", sunriset->lat, sunriset->lon);
+		eu_log_info("sunriset: lat: %f lon: %f", sunriset->lat, sunriset->lon);
 
 		device_set_userdata(device, sunriset);
 		sunriset_calculate(device);
@@ -237,6 +237,6 @@ bool sunriset_technology_init(void)
 	action_type_e actions = 0;
 	device_register_type("SUNRISET", events, actions, sunriset_parser, NULL);
 
-	log_info("Succesfully initialized: Sunriset!");
+	eu_log_info("Succesfully initialized: Sunriset!");
 	return true;
 }
