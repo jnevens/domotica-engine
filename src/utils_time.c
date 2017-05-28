@@ -74,3 +74,25 @@ uint64_t get_current_time_us(void)
 
 	return ret;
 }
+
+const char *get_current_timezone(void)
+{
+	static char *timezone = NULL;
+	time_t t = time(NULL);
+	struct tm lt = { 0 };
+
+	localtime_r(&t, &lt);
+
+	timezone = strdup(lt.tm_zone);
+	return timezone;
+}
+
+int32_t get_current_timezone_offset(void)
+{
+	time_t t = time(NULL);
+	struct tm lt = { 0 };
+
+	localtime_r(&t, &lt);
+
+	return lt.tm_gmtoff;
+}

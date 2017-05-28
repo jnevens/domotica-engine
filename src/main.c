@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <eu/event.h>
 #include <eu/log.h>
@@ -19,6 +20,22 @@ static void termination_handler(int signum)
 	eu_event_loop_stop();
 }
 
+static void fix_time(void)
+{
+	// wait for system time
+	while (get_current_time_s() < 47 * 365 * 24 * 3600) {
+		eu_log_info("No system time set... waiting");
+		sleep(1);
+	}
+
+	time_t t = time(NULL);
+	struct tm lt = { 0 };
+
+	localtime_r(&t, &lt);
+
+	eu_log_info("System time set (TZ=%s GMT%s%lds)", lt.tm_zone, (lt.tm_gmtoff >= 0) ? "+" : "", lt.tm_gmtoff);
+}
+
 int main(int argc, char *argv[])
 {
 	// handle signals
@@ -33,12 +50,8 @@ int main(int argc, char *argv[])
 	eu_log_set_print_level(EU_LOG_DEBUG);
 	// parse arguments
 	arguments_parse(argc, argv);
-	// wait for system time
-	while (get_current_time_s() < 47*365*24*3600) {
-		eu_log_info("No system time set... waiting");
-		sleep(1);
-	}
-	eu_log_info("System time set!");
+	// initialize time
+	fix_time();
 	// parse config file
 	rule_list_init();
 	device_list_init();

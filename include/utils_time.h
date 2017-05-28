@@ -13,6 +13,8 @@
 uint64_t get_current_time_s(void);
 uint64_t get_current_time_ms(void);
 uint64_t get_current_time_us(void);
+const char *get_current_timezone(void);
+int32_t get_current_timezone_offset(void);
 
 // Busy wait delay for most accurate timing, but high CPU usage.
 // Only use this for short periods of time (a few hundred milliseconds at most)!

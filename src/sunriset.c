@@ -123,6 +123,7 @@ static void sunriset_calculate(device_t *device)
 	double rise_civ, set_civ;
 	double rise_naut, set_naut;
 	double rise_astr, set_astr;
+	double tz_corr = 0.0;
 	time_t tt;
 	struct tm *tm;
 
@@ -134,26 +135,37 @@ static void sunriset_calculate(device_t *device)
 	month = 1 + tm->tm_mon;
 	day = 1 + tm->tm_mday;
 
-	eu_log_debug("date: %d-%d-%d", year, month, day);
+	eu_log_debug("date: %d-%d-%d %d:%d:%d %s GMT%s%ds", year, month, day, tm->tm_hour, tm->tm_min, tm->tm_sec,
+			tm->tm_zone, (tm->tm_gmtoff >= 0) ? "+" : "", tm->tm_gmtoff);
+
+	tz_corr = (tm->tm_gmtoff*1.0) / 3600.0;
 
 	sun_rise_set(year, month, day, sr->lon, sr->lat, &rise, &set);
 	civil_twilight(year, month, day, sr->lon, sr->lat, &rise_civ, &set_civ);
 	nautical_twilight(year, month, day, sr->lon, sr->lat, &rise_naut, &set_naut);
 	astronomical_twilight(year, month, day, sr->lon, sr->lat, &rise_astr, &set_astr);
 
-	eu_log_info( "sunrise:              %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
-		TMOD(HOURS(rise)), MINUTES(rise),
-		TMOD(HOURS(set)), MINUTES(set));
+	rise += tz_corr;
+	set += tz_corr;
+	rise_civ += tz_corr;
+	set_civ += tz_corr;
+	rise_naut += tz_corr;
+	set_naut += tz_corr;
+	rise_astr += tz_corr;
+	set_astr += tz_corr;
 
-	eu_log_info( "sunrise civilian:     %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
-		TMOD(HOURS(rise_civ)), MINUTES(rise_civ),
-		TMOD(HOURS(set_civ)), MINUTES(set_civ));
-	eu_log_info( "sunrise nautical:     %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
-		TMOD(HOURS(rise_naut)), MINUTES(rise_naut),
-		TMOD(HOURS(set_naut)), MINUTES(set_naut));
-	eu_log_info( "sunrise astronomical: %2.2d:%2.2d UTC, sunset %2.2d:%2.2d UTC",
-		TMOD(HOURS(rise_astr)), MINUTES(rise_astr),
-		TMOD(HOURS(set_astr)), MINUTES(set_astr));
+	eu_log_info( "sunrise:              %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
+		TMOD(HOURS(rise)), MINUTES(rise), tm->tm_zone,
+		TMOD(HOURS(set)), MINUTES(set), tm->tm_zone);
+	eu_log_info( "sunrise civilian:     %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
+		TMOD(HOURS(rise_civ)), MINUTES(rise_civ), tm->tm_zone,
+		TMOD(HOURS(set_civ)), MINUTES(set_civ), tm->tm_zone);
+	eu_log_info( "sunrise nautical:     %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
+		TMOD(HOURS(rise_naut)), MINUTES(rise_naut), tm->tm_zone,
+		TMOD(HOURS(set_naut)), MINUTES(set_naut), tm->tm_zone);
+	eu_log_info( "sunrise astronomical: %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
+		TMOD(HOURS(rise_astr)), MINUTES(rise_astr), tm->tm_zone,
+		TMOD(HOURS(set_astr)), MINUTES(set_astr), tm->tm_zone);
 
 	sunriset_create_event_timer(device, SUNRISET_EVENT_RISE, TMOD(HOURS(rise)), MINUTES(rise));
 	sunriset_create_event_timer(device, SUNRISET_EVENT_SET, TMOD(HOURS(set)), MINUTES(set));
