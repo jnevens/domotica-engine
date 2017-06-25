@@ -13,6 +13,7 @@
 #include "rule_list.h"
 #include "device_list.h"
 #include "utils_time.h"
+#include "schedule.h"
 
 static void termination_handler(int signum)
 {
@@ -55,6 +56,7 @@ int main(int argc, char *argv[])
 	// parse config file
 	rule_list_init();
 	device_list_init();
+	schedule_init();
 	if(!technologies_init())
 		goto stop;
 

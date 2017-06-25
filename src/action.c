@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include <eu/log.h>
+#include <eu/list.h>
 
 #include "device.h"
 #include "action.h"
@@ -16,6 +17,7 @@
 struct action_s {
 	action_type_e type;
 	device_t *device;
+	eu_list_t *options;
 	// state
 };
 
@@ -28,6 +30,8 @@ static char *action_type_name[] = {
 
 action_t *action_create(device_t *device, action_type_e action_type, char *options[])
 {
+	int i = 1;
+
 	if (!(device_get_supported_action(device) & action_type)) {
 		eu_log_fatal("device %s does not support action: %s", device_get_name(device), action_type_to_char(action_type));
 		return NULL;
@@ -36,12 +40,20 @@ action_t *action_create(device_t *device, action_type_e action_type, char *optio
 	action_t *action = calloc(1, sizeof(action_t));
 	action->device = device;
 	action->type = action_type;
+	action->options = eu_list_create();
+	eu_log_debug("Allo!");
+	while(options[i] != NULL) {
+		eu_log_debug("action add %02d option: %s", i, options[i]);
+		eu_list_append(action->options, strdup(options[i]));
+		i++;
+	}
 
 	return action;
 }
 
 void action_destroy(action_t *action)
 {
+	eu_list_destroy_with_data(action->options, free);
 	free(action);
 }
 
@@ -91,4 +103,21 @@ bool action_execute(action_t *action, event_t *event)
 {
 	device_set(action->device, action);
 	return true;
+}
+
+// first element is 1
+const char *action_get_option(action_t *action, int option)
+{
+	int i = 1;
+	// TODO
+	if ( eu_list_count(action->options) > 0) {
+		eu_list_node_t *node = NULL;
+		eu_list_for_each(node, action->options) {
+			if (i == option) {
+				return (const char *)eu_list_node_data(node);
+			}
+			i++;
+		}
+	}
+	return NULL;
 }

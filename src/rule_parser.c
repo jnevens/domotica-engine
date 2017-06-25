@@ -99,13 +99,15 @@ static statement_e line_get_statement(const char *line)
 
 static void line_destroy(line_t *line)
 {
-	int i;
-	for(i = 0; i < LINE_MAX_OPTIONS; i++) {
-		free(line->options[i]);
+	if (line) {
+		int i;
+		for (i = 0; i < LINE_MAX_OPTIONS; i++) {
+			free(line->options[i]);
+		}
+		free(line->name);
+		free(line->raw);
+		free(line);
 	}
-	free(line->name);
-	free(line->raw);
-	free(line);
 }
 
 static line_t *line_parse(char *strline)
@@ -263,6 +265,8 @@ int rules_read_file(const char *file)
 			schedule = NULL;
 		}
 		line_nr++;
+		line_destroy(ln);
+		ln = NULL;
 	}
 
 	fclose(fp);

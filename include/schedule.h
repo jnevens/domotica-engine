@@ -21,6 +21,8 @@ typedef enum {
 } schedule_type_e;
 #undef X
 
+void schedule_init(void);
+
 schedule_t *schedule_create(const char *name, const char *type);
 bool schedule_parse_line(schedule_t *schedule, const char *line);
 

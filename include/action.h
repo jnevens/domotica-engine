@@ -38,5 +38,7 @@ void action_print(action_t *action);
 action_type_e action_type_from_char(const char *type_str);
 const char *action_type_to_char(action_type_e type);
 
+const char *action_get_option(action_t *action, int option);
+
 
 #endif /* ACTION_H_ */

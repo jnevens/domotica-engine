@@ -7,12 +7,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <eu/log.h>
 #include <eu/list.h>
+#include <eu/timer.h>
 
 #include "event.h"
 #include "schedule.h"
+#include "utils_time.h"
 
 #define X(a, b) b,
 char *schedule_type_names[] = {
@@ -20,6 +23,8 @@ char *schedule_type_names[] = {
 	NULL
 };
 #undef X
+
+eu_list_t *schedules = NULL;
 
 struct schedule_entry_s {
 	int day;
@@ -74,6 +79,8 @@ schedule_t *schedule_create(const char *name, const char *type)
 	schedule->entries = eu_list_create();
 	schedule->name = strdup(name);
 
+	eu_list_append(schedules, schedule);
+
 	return schedule;
 error: free(schedule);
 	return NULL;
@@ -101,4 +108,19 @@ bool schedule_parse_line(schedule_t *schedule, const char *line)
 	schedule_add_entry(schedule, entry);
 	eu_log_debug("day: %d, hour: %d, min: %d, event %s", day, hour, min, event);
 	return true;
+}
+
+static bool calculate_next_timing_event(void *arg)
+{
+	uint64_t until_next = (1000 * 60) - (get_current_time_ms() % (1000 * 60));
+	eu_log_debug("schedule event in %d!", until_next);
+	eu_event_timer_create(until_next, calculate_next_timing_event, NULL);
+	return false;
+}
+
+void schedule_init(void)
+{
+	eu_log_info("Schedules init!");
+	schedules = eu_list_create();
+	calculate_next_timing_event(NULL);
 }

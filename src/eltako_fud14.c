@@ -52,9 +52,9 @@ static bool fud14_device_exec(device_t *device, action_t *action)
 
 	switch (action_get_type(action)) {
 	case ACTION_SET:
-		msg = eltako_dimmer_create_message(fud14->address, DIMMER_EVENT_ON, 100, 1, false);
-		fud14->dim_value = 100;
+		fud14->dim_value = (action_get_option(action, 1) != NULL) ? atoi(action_get_option(action, 1)) :  100;
 		fud14->dim_direction = 0;
+		msg = eltako_dimmer_create_message(fud14->address, DIMMER_EVENT_ON, fud14->dim_value, 1, false);
 		break;
 	case ACTION_UNSET:
 		msg = eltako_dimmer_create_message(fud14->address, DIMMER_EVENT_OFF, 0, 1, false);
