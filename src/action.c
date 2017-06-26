@@ -41,7 +41,6 @@ action_t *action_create(device_t *device, action_type_e action_type, char *optio
 	action->device = device;
 	action->type = action_type;
 	action->options = eu_list_create();
-	eu_log_debug("Allo!");
 	while(options[i] != NULL) {
 		eu_log_debug("action add %02d option: %s", i, options[i]);
 		eu_list_append(action->options, strdup(options[i]));
