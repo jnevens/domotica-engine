@@ -7,6 +7,7 @@ domotica_engine_LDADD = -lvsb -leu -leltako $(LDADD) -lm
 domotica_engine_SOURCES = \
 	action.c \
 	arguments.c \
+	bool.c \
 	device.c \
 	device_list.c \
 	dht22.c \

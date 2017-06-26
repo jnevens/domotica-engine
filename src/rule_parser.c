@@ -40,6 +40,7 @@ static void action_output_handler(char *line);
 	X(STATEMENT_DO,			"DO",		NULL) \
 	X(STATEMENT_SUNRISET,	"SUNRISET",	NULL) \
 	X(STATEMENT_SCHEDULE,	"SCHEDULE",	NULL) \
+	X(STATEMENT_BOOL,		"BOOL",		NULL) \
 	X(STATEMENT_INVALID,	NULL,		NULL)
 
 #define X(a, b, c) a,
@@ -181,6 +182,7 @@ int rules_read_file(const char *file)
 			case STATEMENT_OUTPUT:
 			case STATEMENT_SUNRISET:
 			case STATEMENT_TIMER:
+			case STATEMENT_BOOL:
 			case STATEMENT_SCHEDULE: {
 				const char *devtype = ln->options[0];
 				if (ln->statement == STATEMENT_TIMER)
@@ -189,6 +191,8 @@ int rules_read_file(const char *file)
 					devtype = "SUNRISET";
 				if (ln->statement == STATEMENT_SCHEDULE)
 					devtype = "SCHEDULE";
+				if (ln->statement == STATEMENT_BOOL)
+					devtype = "BOOL";
 				device_t *device = device_create(ln->name, devtype, ln->options);
 				if (device) {
 					device_list_add(device);

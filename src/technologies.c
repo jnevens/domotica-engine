@@ -15,6 +15,7 @@
 #include "timer.h"
 #include "sunriset.h"
 #include "dht22.h"
+#include "bool.h"
 
 typedef struct {
 	technology_init_fn_t init_fn;
@@ -46,6 +47,11 @@ static technology_t technologies[] = {
 		{
 				.init_fn = dht22_technology_init,
 				.name = "DHT22",
+				.exit_on_fail = true,
+		},
+		{
+				.init_fn = bool_technology_init,
+				.name = "Booleans",
 				.exit_on_fail = true,
 		},
 		{}
