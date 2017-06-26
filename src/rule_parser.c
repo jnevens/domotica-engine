@@ -180,15 +180,21 @@ int rules_read_file(const char *file)
 			case STATEMENT_INPUT:
 			case STATEMENT_OUTPUT:
 			case STATEMENT_SUNRISET:
-			case STATEMENT_TIMER: {
+			case STATEMENT_TIMER:
+			case STATEMENT_SCHEDULE: {
 				const char *devtype = ln->options[0];
 				if (ln->statement == STATEMENT_TIMER)
 					devtype = "TIMER";
 				if (ln->statement == STATEMENT_SUNRISET)
 					devtype = "SUNRISET";
+				if (ln->statement == STATEMENT_SCHEDULE)
+					devtype = "SCHEDULE";
 				device_t *device = device_create(ln->name, devtype, ln->options);
 				if (device) {
 					device_list_add(device);
+					if (ln->statement == STATEMENT_SCHEDULE) {
+						schedule = device_get_userdata(device);
+					}
 				} else {
 					eu_log_fatal("Failed to parse device: %s (%s:%d)", ln->name, file, line_nr);
 					ret = -1;
@@ -240,15 +246,6 @@ int rules_read_file(const char *file)
 				}
 				action_t *action = action_create(device, action_type, ln->options);
 				rule_add_action(rule, action);
-				break;
-			}
-			case STATEMENT_SCHEDULE: {
-				eu_log_debug("Create schedule: %s %s", ln->name, ln->options[0]);
-				schedule = schedule_create(ln->name, ln->options[0]);
-				if (!schedule) {
-					eu_log_fatal("Failed to parse schedule: %s (%s:%d)", ln->name, file, line_nr);
-					ret = -1;
-				}
 				break;
 			}
 			default: {
