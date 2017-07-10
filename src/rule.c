@@ -18,6 +18,7 @@
 
 struct rule_s {
 	event_t *event;
+	eu_list_t *conditions;
 	eu_list_t *actions;
 	int count;
 };
@@ -25,6 +26,7 @@ struct rule_s {
 rule_t *rule_create(void)
 {
 	rule_t *rule = calloc(1, sizeof(rule_t));
+	rule->conditions = eu_list_create();
 	rule->actions = eu_list_create();
 
 	return rule;
@@ -32,7 +34,11 @@ rule_t *rule_create(void)
 
 void rule_destroy(rule_t *rule)
 {
-	free(rule);
+	if (rule) {
+		eu_list_destroy_with_data(rule->conditions, free);
+		eu_list_destroy_with_data(rule->actions, free);
+		free(rule);
+	}
 }
 
 bool rule_add_event(rule_t *rule, event_t *event)
@@ -45,9 +51,14 @@ bool rule_add_event(rule_t *rule, event_t *event)
 	return true;
 }
 
-bool rule_add_condition(rule_t *rule, const char *name, const char *condition)
+bool rule_add_condition(rule_t *rule, condition_t *condition)
 {
-	return false;
+	if (!rule || !condition) {
+		return false;
+	}
+
+	eu_list_append(rule->conditions, condition);
+	return true;
 }
 
 bool rule_add_action(rule_t *rule, action_t *action)
@@ -73,6 +84,17 @@ void rule_foreach_action(rule_t *rule, rule_action_iter_fn_t action_cb, void *ar
 	{
 		action_t *action = eu_list_node_data(node);
 		action_cb(action, arg);
+	}
+}
+
+void rule_foreach_condition(rule_t *rule, rule_condition_iter_fn_t condition_cb, void *arg)
+{
+	eu_list_node_t *node;
+
+	eu_list_for_each(node, rule->conditions)
+	{
+		condition_t *condition = eu_list_node_data(node);
+		condition_cb(condition, arg);
 	}
 }
 

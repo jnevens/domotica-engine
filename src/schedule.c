@@ -140,7 +140,7 @@ static void schedule_check_event(schedule_t *schedule)
 	time_t t = time(NULL);
 	struct tm *ts = localtime(&t);
 
-	eu_log_debug("schedule: %s %d %d:%d", schedule->name, ts->tm_wday, ts->tm_hour, ts->tm_min);
+	//eu_log_debug("schedule: %s %d %d:%d", schedule->name, ts->tm_wday, ts->tm_hour, ts->tm_min);
 
 	schedule_entry_t *entry = schedule_search_entry(schedule, ts->tm_wday, ts->tm_hour, ts->tm_min);
 	if (entry) {
@@ -159,7 +159,7 @@ static void schedule_check_events(void)
 static bool calculate_next_timing_event(void *arg)
 {
 	uint64_t until_next = (1000 * 60) - (get_current_time_ms() % (1000 * 60));
-	eu_log_debug("schedule event in %d!", until_next);
+	// eu_log_debug("schedule event in %d!", until_next);
 	eu_event_timer_create(until_next, calculate_next_timing_event, (void *)0xdeadbeef);
 
 	if (arg != NULL) {

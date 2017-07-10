@@ -18,6 +18,7 @@
 
 #include "event.h"
 #include "action.h"
+#include "condition.h"
 #include "rule.h"
 #include "device.h"
 #include "device_list.h"
@@ -228,7 +229,23 @@ int rules_read_file(const char *file)
 			}
 			case STATEMENT_AND: {
 				eu_log_debug("Rule add condition: %s %s", ln->name, ln->options[0]);
-				rule_add_condition(rule, ln->name, ln->options[0]);
+				if (!rule) {
+					eu_log_fatal("No IF before AND! (%s:%d)", file, line_nr);
+				}
+				device_t *device = device_list_find_by_name(ln->name);
+				if (!device) {
+					eu_log_err("Cannot find device: %s", ln->name);
+					ret = -1;
+					break;
+				}
+				condition_type_e condition_type = condition_type_from_char(ln->options[0]);
+				if (condition_type == -1) {
+					eu_log_err("Action '%s' does not exist!", ln->options[0]);
+					ret = -1;
+					break;
+				}
+				condition_t *condition = condition_create(device, condition_type, ln->options);
+				rule_add_condition(rule, condition);
 				break;
 			}
 			case STATEMENT_DO: {

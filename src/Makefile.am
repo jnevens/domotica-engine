@@ -8,6 +8,7 @@ domotica_engine_SOURCES = \
 	action.c \
 	arguments.c \
 	bool.c \
+	condition.c \
 	device.c \
 	device_list.c \
 	dht22.c \
