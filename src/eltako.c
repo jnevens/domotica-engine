@@ -17,6 +17,7 @@
 #include "device.h"
 #include "device_list.h"
 #include "eltako.h"
+#include "eltako_fsr14.h"
 #include "eltako_fsb14.h"
 #include "eltako_fts14em.h"
 #include "eltako_fud14.h"
@@ -94,8 +95,7 @@ bool eltako_technology_init(void)
 
 	eltako_fts14em_init();
 	eltako_fud14_init();
-	//eltako_fsr14-2x_init();
-	//eltako_fsr14-4x_init();
+	eltako_fsr14_init();
 	eltako_fsb14_init();
 
 	eu_log_info("Succesfully initialized: eltako!");
