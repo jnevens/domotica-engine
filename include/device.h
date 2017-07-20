@@ -43,9 +43,6 @@ bool device_set(device_t *device, action_t *action);
 void device_trigger_event(device_t *device, event_type_e event);
 bool device_check(device_t *device, condition_t *condition);
 
-/* DEPRECATED */
-bool device_register_type(const char *name, event_type_e events, action_type_e actions,
-		device_parse_fn_t parse_cb, device_exec_fn_t exec_cb);
 bool device_type_register(device_type_info_t *device_type_info);
 
 const char *device_get_name(device_t *device);

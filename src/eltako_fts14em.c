@@ -106,11 +106,19 @@ uint32_t eltako_fts14em_get_address(device_t *device)
 	return eltako_device->address;
 }
 
+static device_type_info_t fts14em_info = {
+	.name = "FTS14EM",
+	.events = EVENT_PRESS | EVENT_RELEASE | EVENT_SHORT_PRESS | EVENT_LONG_PRESS | EVENT_DIM,
+	.actions = 0,
+	.conditions = 0,
+	.check_cb = NULL,
+	.parse_cb = fts14em_device_parser,
+	.exec_cb = fts14em_device_exec,
+};
+
 bool eltako_fts14em_init(void)
 {
-	event_type_e events = EVENT_PRESS | EVENT_RELEASE | EVENT_SHORT_PRESS | EVENT_LONG_PRESS | EVENT_DIM;
-	action_type_e actions = 0;
-	device_register_type("FTS14EM", events, actions, fts14em_device_parser, fts14em_device_exec);
+	device_type_register(&fts14em_info);
 
 	return false;
 }

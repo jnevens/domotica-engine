@@ -68,12 +68,33 @@ static bool fsr14_device_exec(device_t *device, action_t *action)
 	return eltako_send(msg);
 }
 
+static bool fsr14_device_check(device_t *device, condition_t *condition)
+{
+	device_fsr14_t *fsr14 = device_get_userdata(device);
+	switch (condition_get_type(condition)) {
+	case CONDITION_SET:
+		return (fsr14->val == 1) ? true : false;
+		break;
+	case CONDITION_UNSET:
+		return (fsr14->val == 0) ? true : false;
+		break;
+	}
+	return false;
+}
+
+static device_type_info_t fsr14_info = {
+	.name = "FSR14",
+	.events = 0,
+	.actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE,
+	.conditions = CONDITION_SET | CONDITION_UNSET,
+	.check_cb = fsr14_device_check,
+	.parse_cb = fsr14_device_parser,
+	.exec_cb = fsr14_device_exec,
+};
 
 bool eltako_fsr14_init(void)
 {
-	action_type_e actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE;
-	event_type_e events = 0;
-	device_register_type("FSR14", events, actions, fsr14_device_parser, fsr14_device_exec);
+	device_type_register(&fsr14_info);
 
 	return true;
 }

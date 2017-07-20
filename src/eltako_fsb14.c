@@ -66,11 +66,19 @@ static bool fsb14_device_exec(device_t *device, action_t *action)
 	return eltako_send(msg);
 }
 
+static device_type_info_t fsb14_info = {
+	.name = "FSB14",
+	.events = 0,
+	.actions = ACTION_UP | ACTION_DOWN | ACTION_STOP,
+	.conditions = 0,
+	.check_cb = NULL,
+	.parse_cb = fsb14_device_parser,
+	.exec_cb = fsb14_device_exec,
+};
+
 bool eltako_fsb14_init(void)
 {
-	action_type_e actions = ACTION_UP | ACTION_DOWN | ACTION_STOP;
-	event_type_e events = 0;
-	device_register_type("FSB14", events, actions, fsb14_device_parser, fsb14_device_exec);
+	device_type_register(&fsb14_info);
 
 	return true;
 }

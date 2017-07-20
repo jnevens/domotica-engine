@@ -185,13 +185,21 @@ static bool schedule_exec(device_t *device, action_t *action)
 	return false;
 }
 
+static device_type_info_t schedule_info = {
+	.name = "SCHEDULE",
+	.events = 0,
+	.actions = 0,
+	.conditions = 0,
+	.check_cb = NULL,
+	.parse_cb = schedule_parser,
+	.exec_cb = schedule_exec,
+};
 
 void schedule_init(void)
 {
 	eu_log_info("Schedules init!");
-	event_type_e events = 0;
-	action_type_e actions = 0;
-	device_register_type("SCHEDULE", events, actions, schedule_parser, schedule_exec);
+
+	device_type_register(&schedule_info);
 
 	schedules = eu_list_create();
 	calculate_next_timing_event(NULL);

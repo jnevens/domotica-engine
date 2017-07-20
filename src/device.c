@@ -129,25 +129,6 @@ bool device_check(device_t *device, condition_t *condition)
 	return false;
 }
 
-bool device_register_type(const char *name, event_type_e events, action_type_e actions,
-		device_parse_fn_t parse_cb, device_exec_fn_t exec_cb)
-{
-	if (!device_types) {
-		device_types = eu_list_create();
-	}
-
-	device_type_t *type = calloc(1, sizeof(device_type_t));
-	type->name = strdup(name);
-	type->actions = actions;
-	type->parse_cb = parse_cb;
-	type->exec_cb = exec_cb;
-
-	eu_log_info("Register device type: %s", name);
-
-	eu_list_append(device_types, type);
-	return true;
-}
-
 bool device_type_register(device_type_info_t *device_type_info)
 {
 	if (!device_types) {

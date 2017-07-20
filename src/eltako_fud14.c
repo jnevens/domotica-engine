@@ -91,12 +91,33 @@ static bool fud14_device_exec(device_t *device, action_t *action)
 	return eltako_send(msg);
 }
 
+static bool fud14_device_check(device_t *device, condition_t *condition)
+{
+	device_fud14_t *fud14 = device_get_userdata(device);
+	switch (condition_get_type(condition)) {
+	case CONDITION_SET:
+		return (fud14->dim_value > 0) ? true : false;
+		break;
+	case CONDITION_UNSET:
+		return (fud14->dim_value == 0) ? true : false;
+		break;
+	}
+	return false;
+}
+
+static device_type_info_t fud14_info = {
+	.name = "FUD14",
+	.events = 0,
+	.actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE | ACTION_DIM,
+	.conditions = CONDITION_SET | CONDITION_UNSET,
+	.check_cb = fud14_device_check,
+	.parse_cb = fud14_device_parser,
+	.exec_cb = fud14_device_exec,
+};
 
 bool eltako_fud14_init(void)
 {
-	action_type_e actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE | ACTION_DIM;
-	event_type_e events = 0;
-	device_register_type("FUD14", events, actions, fud14_device_parser, fud14_device_exec);
+	device_type_register(&fud14_info);
 
 	return true;
 }

@@ -190,12 +190,30 @@ static bool gpio_output_exec(device_t *device, action_t *action)
 	return false;
 }
 
+static device_type_info_t gpi_info = {
+	.name = "GPI",
+	.events = EVENT_PRESS | EVENT_RELEASE | EVENT_SHORT_PRESS | EVENT_LONG_PRESS | EVENT_DIM,
+	.actions = 0,
+	.conditions = 0,
+	.check_cb = NULL,
+	.parse_cb = gpio_input_parser,
+	.exec_cb = gpio_input_exec,
+};
+
+static device_type_info_t gpo_info = {
+	.name = "GPO",
+	.events = 0,
+	.actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE,
+	.conditions = 0,
+	.check_cb = NULL,
+	.parse_cb = gpio_output_parser,
+	.exec_cb = gpio_output_exec,
+};
+
 bool gpio_technology_init(void)
 {
-	event_type_e events = EVENT_PRESS | EVENT_RELEASE | EVENT_SHORT_PRESS | EVENT_LONG_PRESS | EVENT_DIM;
-	device_register_type("GPI", events, 0, gpio_input_parser, gpio_input_exec);
-	action_type_e actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE;
-	device_register_type("GPO", 0, actions, gpio_output_parser, gpio_output_exec);
+	device_type_register(&gpi_info);
+	device_type_register(&gpo_info);
 
 	eu_log_info("Succesfully initialized: gpio!");
 	return true;

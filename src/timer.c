@@ -66,11 +66,19 @@ static bool timer_device_exec(device_t *device, action_t *action)
 	return false;
 }
 
+static device_type_info_t timer_info = {
+	.name = "TIMER",
+	.events = EVENT_TIMEOUT,
+	.actions = ACTION_SET | ACTION_UNSET,
+	.conditions = 0,
+	.check_cb = NULL,
+	.parse_cb = timer_device_parser,
+	.exec_cb = timer_device_exec,
+};
+
 bool timer_technology_init(void)
 {
-	event_type_e events = EVENT_TIMEOUT;
-	action_type_e actions = ACTION_SET | ACTION_UNSET;
-	device_register_type("TIMER", events, actions, timer_device_parser, timer_device_exec);
+	device_type_register(&timer_info);
 
 	eu_log_info("Succesfully initialized: Timers!");
 	return true;

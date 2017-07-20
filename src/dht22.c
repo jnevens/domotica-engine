@@ -315,11 +315,19 @@ static bool dht22_parser(device_t *device, char *options[])
 	return rv;
 }
 
+static device_type_info_t dht22_info = {
+	.name = "DHT22",
+	.events = EVENT_TEMPERATURE | EVENT_HUMIDITY,
+	.actions = 0,
+	.conditions = 0,
+	.check_cb = NULL,
+	.parse_cb = dht22_parser,
+	.exec_cb = NULL,
+};
+
 bool dht22_technology_init()
 {
-	event_type_e events = EVENT_TEMPERATURE | EVENT_HUMIDITY;
-	action_type_e actions = 0;
-	device_register_type("DHT22", events, actions, dht22_parser, NULL);
+	device_type_register(&dht22_info);
 
 	eu_log_info("Succesfully initialized: Sunriset!");
 	return true;

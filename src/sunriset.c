@@ -243,11 +243,22 @@ static bool sunriset_parser(device_t *device, char *options[])
 	return false;
 }
 
+static device_type_info_t sunriset_info = {
+	.name = "SUNRISET",
+	.events =	EVENT_SUNRISE | EVENT_SUNSET |
+				EVENT_SUNRISE_CIV | EVENT_SUNSET_CIV |
+				EVENT_SUNRISE_NAUT | EVENT_SUNSET_NAUT |
+				EVENT_SUNRISE_ASTRO | EVENT_SUNSET_ASTRO,
+	.actions = 0,
+	.conditions = 0,
+	.check_cb = NULL,
+	.parse_cb = sunriset_parser,
+	.exec_cb = NULL,
+};
+
 bool sunriset_technology_init(void)
 {
-	event_type_e events = EVENT_SUNRISE | EVENT_SUNSET;
-	action_type_e actions = 0;
-	device_register_type("SUNRISET", events, actions, sunriset_parser, NULL);
+	device_type_register(&sunriset_info);
 
 	eu_log_info("Succesfully initialized: Sunriset!");
 	return true;

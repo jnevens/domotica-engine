@@ -84,7 +84,7 @@ static bool bool_check(device_t *device, condition_t *condition)
 	return false;
 }
 
-device_type_info_t bool_info = {
+static device_type_info_t bool_info = {
 	.name = "BOOL",
 	.events = EVENT_SET | EVENT_UNSET,
 	.actions = ACTION_SET | ACTION_UNSET | ACTION_TOGGLE,
