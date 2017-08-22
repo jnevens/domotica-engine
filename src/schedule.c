@@ -64,7 +64,7 @@ static bool schedule_add_entry(schedule_t *schedule, schedule_entry_t *entry)
 
 static schedule_t *schedule_create(const char *name, const char *type)
 {
-	int i;
+	int i = 0;
 	schedule_t *schedule = calloc(1, sizeof(schedule_t));
 
 	if (schedule) {
@@ -74,35 +74,36 @@ static schedule_t *schedule_create(const char *name, const char *type)
 				break;
 			}
 		}
+
+		if (schedule_type_names[i] == NULL) {
+			eu_log_err("invalid schedule type!");
+			goto error;
+		}
+
+		schedule->entries = eu_list_create();
+		schedule->name = strdup(name);
+
+		eu_list_append(schedules, schedule);
 	}
-
-	if (schedule_type_names[i] == NULL) {
-		eu_log_err("invalid schedule type!");
-		goto error;
-	}
-
-	schedule->entries = eu_list_create();
-	schedule->name = strdup(name);
-
-	eu_list_append(schedules, schedule);
 
 	return schedule;
-error: free(schedule);
+error:
+	free(schedule);
 	return NULL;
 }
 
 
 bool schedule_parse_line(schedule_t *schedule, const char *line)
 {
-	int rv = 0, day = 1, hour = 0, min = 0;
+	int day = 1, hour = 0, min = 0;
 	char event[50];
 
 	if (schedule->type == SCHEDULE_DAY) {
-		if (sscanf(line, "%d %d %s %*c", &hour, &min, event) != 3) {
+		if (sscanf(line, "%d %d %49s %*c", &hour, &min, event) != 3) {
 			return false;
 		}
 	} else if (schedule->type == SCHEDULE_WEEK) {
-		if (sscanf(line, "%d %d %d %s %*c", &day, &hour, &min, event) != 4) {
+		if (sscanf(line, "%d %d %d %49s %*c", &day, &hour, &min, event) != 4) {
 			return false;
 		}
 	}

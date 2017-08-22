@@ -106,6 +106,7 @@ static int pi_2_mmio_init(void)
 		fseek(fp, 4, SEEK_SET);
 		unsigned char buf[4];
 		if (fread(buf, 1, sizeof(buf), fp) != sizeof(buf)) {
+			fclose(fp);
 			return MMIO_ERROR_OFFSET;
 		}
 		uint32_t peri_base = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3] << 0;
@@ -131,11 +132,9 @@ static int pi_2_mmio_init(void)
 
 static bool dht22_read_part2(void *arg)
 {
-	float temperature=0.0f, humidity = 0.0f;
 	device_t *device = arg;
 	dht22_t *dht22 = device_get_userdata(device);
 	int pin = dht22->gpio;
-	int type = DHT22;
 
 	// Store the count that each DHT bit pulse is low and high.
 	// Make sure array is initialized to start at zero.
@@ -144,7 +143,6 @@ static bool dht22_read_part2(void *arg)
 	// The next calls are timing critical and care should be taken
 	// to ensure no unnecssary work is done below.
 	sched_set_max_priority();
-
 
 	// Set pin low for ~20 milliseconds.
 	pi_2_mmio_set_low(pin);
@@ -217,32 +215,22 @@ static bool dht22_read_part2(void *arg)
 	}
 
 	// Useful debug info:
-	//printf("Data: 0x%x 0x%x 0x%x 0x%x 0x%x\n", data[0], data[1], data[2], data[3], data[4]);
+	eu_log_debug("DHT22 Data: 0x%x 0x%x 0x%x 0x%x 0x%x", data[0], data[1], data[2], data[3], data[4]);
 
 	// Verify checksum of received data.
 	if (data[4] == ((data[0] + data[1] + data[2] + data[3]) & 0xFF)) {
-		if (type == DHT11) {
-			// Get humidity and temp for DHT11 sensor.
-			humidity = (float) data[0];
-			temperature = (float) data[2];
-		} else if (type == DHT22) {
-			// Calculate humidity and temp for DHT22 sensor.
-			humidity = (data[0] * 256 + data[1]) / 10.0f;
-			temperature = ((data[2] & 0x7F) * 256 + data[3]) / 10.0f;
-			if (data[2] & 0x80) {
-				temperature *= -1.0f;
-			}
+		// Calculate humidity and temp for DHT22 sensor.
+		float humidity = (data[0] * 256 + data[1]) / 10.0f;
+		float temperature = ((data[2] & 0x7F) * 256 + data[3]) / 10.0f;
+		if (data[2] & 0x80) {
+			//temperature *= -1.0f;
+			temperature = -1.0f;
 		}
 
-		printf("Temperature: %.2f\n", temperature);
-		printf("Humidity: %.2f\n", humidity);
-
+		eu_log_info("DHT22 %s: Temp: %.2f Hum: %.2f", device_get_name(device), temperature, humidity);
 
 		dht22->temperature = temperature;
 		dht22->humidity = humidity;
-
-		event_t *tevent = event_create(device, EVENT_TEMPERATURE);
-		event_t *hevent = event_create(device, EVENT_HUMIDITY);
 
 		device_trigger_event(device, EVENT_TEMPERATURE);
 		device_trigger_event(device, EVENT_HUMIDITY);
@@ -256,7 +244,6 @@ static bool dht22_read_part2(void *arg)
 static int dht22_read(device_t *device)
 {
 	dht22_t *dht22 = device_get_userdata(device);
-	int type = DHT22, pin = dht22->gpio;
 
 	// Initialize GPIO library.
 	if (pi_2_mmio_init() < 0) {
@@ -264,10 +251,10 @@ static int dht22_read(device_t *device)
 	}
 
 	// Set pin to output.
-	pi_2_mmio_set_output(pin);
+	pi_2_mmio_set_output(dht22->gpio);
 
 	// Set pin high for ~500 milliseconds.
-	pi_2_mmio_set_high(pin);
+	pi_2_mmio_set_high(dht22->gpio);
 
 	eu_event_timer_create(500, dht22_read_part2, device);
 }
@@ -277,7 +264,6 @@ static void dht22_read_schedule(device_t *device);
 static bool dht22_read_schedule_callback(void *arg)
 {
 	device_t *device = (device_t *)arg;
-	dht22_t *dht22 = device_get_userdata(device);
 
 	dht22_read(device);
 	dht22_read_schedule(device);
@@ -302,9 +288,9 @@ static bool dht22_parser(device_t *device, char *options[])
 	int gpio = atoi(options[1]);
 	eu_log_debug("gpio: %d", gpio);
 
-	dht22_t *dht22 = calloc(1, sizeof(dht22));
+	dht22_t *dht22 = calloc(1, sizeof(dht22_t));
 	dht22->gpio = gpio;
-	dht22->period = 60;
+	dht22->period = 900;
 	device_set_userdata(device, dht22);
 
 	if (gpio >= 0 && gpio <= 1024)

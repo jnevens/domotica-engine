@@ -25,8 +25,8 @@ typedef struct {
 
 static bool fsr14_device_parser(device_t *device, char *options[])
 {
-	device_fsr14_t *fsr14 = calloc(1, sizeof(device_fsr14_t));
 	if(options[1] != NULL) {
+		device_fsr14_t *fsr14 = calloc(1, sizeof(device_fsr14_t));
 		fsr14->address = strtoll(options[1], NULL, 16);
 		device_set_userdata(device, fsr14);
 		eu_log_debug("FSR14 device created (name: %s, address: 0x%x)", device_get_name(device), fsr14->address);

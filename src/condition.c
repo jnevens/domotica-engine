@@ -59,7 +59,7 @@ const char *condition_type_to_char(condition_type_e type)
 {
 	int i;
 	const char *type_name = NULL;
-	for(i = 0; i< 32; i++) {
+	for(i = 0; condition_type_name[i] != NULL; i++) {
 		if (type & 0x1) {
 			type_name = condition_type_name[i];
 			break;

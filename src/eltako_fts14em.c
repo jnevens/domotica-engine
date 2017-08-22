@@ -27,8 +27,8 @@ typedef struct {
 
 static bool fts14em_device_parser(device_t *device, char *options[])
 {
-	fts14em_device_t *eltako_device = calloc(1, sizeof(fts14em_device_t));
 	if(options[1] != NULL) {
+		fts14em_device_t *eltako_device = calloc(1, sizeof(fts14em_device_t));
 		eltako_device->address = strtoll(options[1], NULL, 16);
 		device_set_userdata(device, eltako_device);
 		eu_log_info("FTS14EM device created (name: %s, address: 0x%x)", device_get_name(device), eltako_device->address);
@@ -40,11 +40,6 @@ static bool fts14em_device_parser(device_t *device, char *options[])
 bool eltako_fts14em_dim_press_timer_cb(void *arg)
 {
 	device_t *device = arg;
-	fts14em_device_t *fts14em_device = device_get_userdata(device);
-
-	uint64_t press_time = fts14em_device->press_time;
-	uint64_t release_time = get_current_time_ms();
-	uint64_t press_duration = release_time - press_time;
 
 	device_trigger_event(device, EVENT_DIM);
 

@@ -143,7 +143,7 @@ static line_t *line_parse(char *strline)
 
 	free(ln);
 	if (n < 2) {
-
+		line_destroy(line);
 		line = NULL;
 	}
 
@@ -295,8 +295,6 @@ int rules_read_dir(const char *dir)
 {
 	DIR* FD;
 	struct dirent* in_file;
-	FILE *entry_file;
-	char buffer[BUFSIZ];
 	int ret = -1, files_read = 0;
 
 	eu_log_info("read rules directory: %s", dir);

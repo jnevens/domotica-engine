@@ -35,11 +35,6 @@ typedef struct {
 bool gpio_input_dim_press_timer_cb(void *arg)
 {
 	device_t *device = arg;
-	gpio_t *gpio_input = device_get_userdata(device);
-
-	uint64_t press_time = gpio_input->press_time;
-	uint64_t release_time = get_current_time_ms();
-	uint64_t press_duration = release_time - press_time;
 
 	device_trigger_event(device, EVENT_DIM);
 
@@ -110,7 +105,7 @@ void gpio_input_edge_detected_cb(int fd, short int revents, void *arg)
 {
 	uint8_t buf[1024] = {};
 	lseek(fd, 0, SEEK_SET);
-	int rv = read(fd, buf, sizeof(buf));
+	read(fd, buf, sizeof(buf));
 	int edge = (buf[0] == '1') ? 1 : 0;
 
 	device_t *device = device_list_find(gpio_input_find_by_fd_cb, (void *)fd);
@@ -127,8 +122,8 @@ void gpio_input_edge_detected_cb(int fd, short int revents, void *arg)
 
 static bool gpio_input_parser(device_t *device, char *options[])
 {
-	gpio_t *gpio_input = calloc(1, sizeof(gpio_t));
 	if(options[1] != NULL) {
+		gpio_t *gpio_input = calloc(1, sizeof(gpio_t));
 		gpio_input->pin = strtoll(options[1], NULL, 10);
 		device_set_userdata(device, gpio_input);
 		gpio_export(gpio_input->pin);
@@ -152,8 +147,8 @@ static bool gpio_input_exec(device_t *device, action_t *action)
 
 static bool gpio_output_parser(device_t *device, char *options[])
 {
-	gpio_t *gpio_output = calloc(1, sizeof(gpio_t));
 	if(options[1] != NULL) {
+		gpio_t *gpio_output = calloc(1, sizeof(gpio_t));
 		gpio_output->pin = strtoll(options[1], NULL, 10);
 		device_set_userdata(device, gpio_output);
 		gpio_export(gpio_output->pin);

@@ -90,7 +90,12 @@ static void sunriset_create_event_timer(device_t *device, sunriset_event_e se, i
 {
 	sunriset_t *sr = device_get_userdata(device);
 	time_t ct = time(NULL), et;
-	ctime(&ct);
+
+	if(ctime(&ct) == NULL) {
+		eu_log_err("Failed creating time!");
+		return;
+	}
+
 	struct tm *tm = localtime(&ct);
 	tm->tm_sec = 0;
 	tm->tm_min = min;
@@ -117,7 +122,6 @@ static void sunriset_create_event_timer(device_t *device, sunriset_event_e se, i
 static void sunriset_calculate(device_t *device)
 {
 	sunriset_t *sr = device_get_userdata(device);
-	int rs;
 	int year,month,day;
 	double rise, set;
 	double rise_civ, set_civ;
@@ -128,7 +132,10 @@ static void sunriset_calculate(device_t *device)
 	struct tm *tm;
 
 	tt = time(NULL);
-	ctime(&tt);
+	if(ctime(&tt) == NULL) {
+		eu_log_err("Failed creating time!");
+		return;
+	}
 	tm = localtime(&tt);
 
 	year = 1900 + tm->tm_year;
@@ -191,7 +198,10 @@ static void sunriset_calculate_next_run(device_t *device)
 {
 	sunriset_t *sr = device_get_userdata(device);
 	time_t ct = time(NULL), nrt;
-	ctime(&ct);
+	if(ctime(&ct) == NULL) {
+		eu_log_err("Failed creating time!");
+		return;
+	}
 	struct tm *tm = localtime(&ct);
 	tm->tm_sec = 0;
 	tm->tm_min = 0;
@@ -226,7 +236,7 @@ static bool sunriset_parser(device_t *device, char *options[])
 		}
 		/* this looks different from the others because 77E
 		 parses as scientific notation */
-		if (1 == sscanf(options[1], "%lf%", &temp, &hemisphere)
+		if (1 == sscanf(options[1], "%lf%", &temp)
 				&& (options[1][strlen(options[1]) - 1] == 'E'
 					|| options[1][strlen(options[1]) - 1] == 'e')) {
 			sunriset->lon = temp;

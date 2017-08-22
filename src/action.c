@@ -88,7 +88,7 @@ const char *action_type_to_char(action_type_e type)
 {
 	int i;
 	const char *type_name = NULL;
-	for(i = 0; i< 32; i++) {
+	for(i = 0; action_type_name[i] != NULL; i++) {
 		if (type & 0x1) {
 			type_name = action_type_name[i];
 			break;
@@ -104,16 +104,14 @@ bool action_execute(action_t *action, event_t *event)
 	return true;
 }
 
-// first element is 1
-const char *action_get_option(action_t *action, int option)
-{
-	int i = 1;
-	// TODO
-	if ( eu_list_count(action->options) > 0) {
+const char *action_get_option(action_t *action, int option) {
+	if (eu_list_count(action->options) > 0) {
+		int i = 1;
 		eu_list_node_t *node = NULL;
-		eu_list_for_each(node, action->options) {
-			if (i == option) {
-				return (const char *)eu_list_node_data(node);
+		eu_list_for_each(node, action->options)
+		{
+			if (option == i) {
+				return (const char *) eu_list_node_data(node);
 			}
 			i++;
 		}

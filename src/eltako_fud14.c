@@ -29,8 +29,8 @@ typedef struct {
 
 static bool fud14_device_parser(device_t *device, char *options[])
 {
-	device_fud14_t *fud14 = calloc(1, sizeof(device_fud14_t));
 	if(options[1] != NULL) {
+		device_fud14_t *fud14 = calloc(1, sizeof(device_fud14_t));
 		fud14->address = strtoll(options[1], NULL, 16);
 		fud14->dim_value = 0;
 		fud14->dim_direction = 1;
@@ -95,6 +95,11 @@ static bool fud14_device_check(device_t *device, condition_t *condition)
 {
 	device_fud14_t *fud14 = device_get_userdata(device);
 	switch (condition_get_type(condition)) {
+
+	eu_log_debug("condition: %s, current value: %d",
+			condition_type_to_char(condition_get_type(condition)),
+			fud14->dim_value);
+
 	case CONDITION_SET:
 		return (fud14->dim_value > 0) ? true : false;
 		break;

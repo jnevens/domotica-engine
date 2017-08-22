@@ -24,12 +24,11 @@ static void trigger_action_iter_cb(action_t *action, void *arg)
 static void check_condition_iter_cb(condition_t *condition, void *arg)
 {
 	bool *condition_ok = arg;
-	if (!condition_check(condition)) {
+	if (condition_check(condition)) {
+		eu_log_debug("Check condition OK");
+	} else {
 		*condition_ok = false;
 		eu_log_debug("Check condition NOK");
-	} else {
-		eu_log_debug("Check condition OK");
-
 	}
 }
 

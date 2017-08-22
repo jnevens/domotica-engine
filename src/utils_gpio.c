@@ -92,6 +92,7 @@ int gpio_set_direction(int pin, gpio_direction_e dir)
 
 	if (-1 == write(fd, &s_directions_str[GPIO_DIR_IN == dir ? 0 : 3], GPIO_DIR_IN == dir ? 2 : 3)) {
 		fprintf(stderr, "Failed to set direction!\n");
+		close(fd);
 		return(-1);
 	}
 
@@ -120,6 +121,7 @@ int gpio_set_edge(int pin, gpio_edge_e edge)
 
 	if (-1 == write(fd, gpio_edges[edge], strlen(gpio_edges[edge]) + 1)) {
 		fprintf(stderr, "Failed to set direction!\n");
+		close(fd);
 		return(-1);
 	}
 
@@ -142,6 +144,7 @@ int gpio_get_value(int pin)
 
 	if (-1 == read(fd, value_str, 3)) {
 		fprintf(stderr, "Failed to read value!\n");
+		close(fd);
 		return(-1);
 	}
 
@@ -166,6 +169,7 @@ int gpio_set_value(int pin, gpio_value_e value)
 
 	if (1 != write(fd, &s_values_str[GPIO_VAL_LOW == value ? 0 : 1], 1)) {
 		fprintf(stderr, "Failed to write value!\n");
+		close(fd);
 		return(-1);
 	}
 
