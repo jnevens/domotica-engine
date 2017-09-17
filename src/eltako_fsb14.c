@@ -53,6 +53,7 @@ static bool fsb14_timer_callback(void *arg)
 	} else if (fsb14->last_action == ACTION_DOWN) {
 		fsb14->condition |= CONDITION_DOWN;
 	}
+	fsb14->last_action = ACTION_STOP;
 	fsb14->timer = NULL;
 
 	return false;
