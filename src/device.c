@@ -41,17 +41,20 @@ device_t *device_create(char *name, const char *devtype, char *options[])
 	device->name = strdup(name);
 
 	// lookup device type
-	if(options[0] != NULL) {
-		eu_list_node_t *node;
-		eu_list_for_each(node, device_types) {
-			device_type_t *device_type = eu_list_node_data(node);
-			if (strcmp(device_type->name, devtype) == 0) {
-				if(device_type->parse_cb(device, options)) {
-					device->device_type = device_type;
-					goto finish;
+	if (device && device->name) {
+		if (options[0] != NULL) {
+			eu_list_node_t *node;
+			eu_list_for_each(node, device_types)
+			{
+				device_type_t *device_type = eu_list_node_data(node);
+				if (strcmp(device_type->name, devtype) == 0) {
+					if (device_type->parse_cb(device, options)) {
+						device->device_type = device_type;
+						goto finish;
+					}
+					eu_log_err("Failed to parse device: %s", name);
+					break;
 				}
-				eu_log_err("Failed to parse device: %s", name);
-				break;
 			}
 		}
 	}
@@ -152,6 +155,9 @@ bool device_type_register(device_type_info_t *device_type_info)
 
 const char *device_get_name(device_t *device)
 {
+	if (!device)
+		return NULL;
+
 	return device->name;
 }
 
