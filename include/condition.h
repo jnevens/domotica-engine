@@ -11,8 +11,13 @@
 #include "types.h"
 
 #define CONDITION_TYPE_TABLE \
-	X(0,	CONDITION_SET,		"SET") \
-	X(1,	CONDITION_UNSET,	"UNSET")
+	X(0,	CONDITION_SET,			"SET") \
+	X(1,	CONDITION_UNSET,		"UNSET") \
+	X(2,	CONDITION_UP,			"UP") \
+	X(3,	CONDITION_DOWN,			"DOWN") \
+	X(4,	CONDITION_STOPPED,		"STOPPED") \
+	X(5,	CONDITION_RISING,		"RISING") \
+	X(6,	CONDITION_DESCENDING,	"DESCENDING")
 
 #define X(a,b,c) b = (1 << a),
 enum condition_type {
