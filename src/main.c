@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
+#include <execinfo.h>
 
 #include <eu/event.h>
 #include <eu/log.h>
@@ -20,6 +22,26 @@ static void termination_handler(int signum)
 	eu_log_err("Terminate event loop!");
 	eu_event_loop_stop();
 }
+
+static void reload_handler(int signum)
+{
+	eu_log_info("Reload config!");
+}
+
+static void segfault_handler(int sig)
+{
+	void *array[10];
+	size_t size;
+
+	// get void*'s for all entries on the stack
+	size = backtrace(array, 10);
+
+	// print out all the frames to stderr
+	fprintf(stderr, "Error: signal %d:\n", sig);
+	backtrace_symbols_fd(array, size, STDERR_FILENO);
+	exit(1);
+}
+
 
 static void fix_time(void)
 {
@@ -42,6 +64,8 @@ int main(int argc, char *argv[])
 	// handle signals
 	signal(SIGTERM, termination_handler);
 	signal(SIGINT, termination_handler);
+	signal(SIGUSR1, reload_handler);
+	signal(SIGSEGV, segfault_handler);
 
 	// init event loop
 	eu_event_loop_init();
