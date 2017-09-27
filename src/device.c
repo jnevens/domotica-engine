@@ -33,7 +33,7 @@ struct device_s {
 	void *userdata;
 };
 
-static eu_list_t *device_types;
+static eu_list_t *device_types = NULL;
 
 device_t *device_create(char *name, const char *devtype, char *options[])
 {

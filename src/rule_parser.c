@@ -33,8 +33,8 @@ static void action_output_handler(char *line);
 // todo rule_t input_t event_t output_t action_t
 
 #define STATEMENT_TABLE \
-	X(STATEMENT_INPUT,		"INPUT",	action_input_parser) \
-	X(STATEMENT_OUTPUT,		"OUTPUT",	action_output_parser) \
+	X(STATEMENT_INPUT,		"INPUT",	NULL) \
+	X(STATEMENT_OUTPUT,		"OUTPUT",	NULL) \
 	X(STATEMENT_TIMER,		"TIMER",	NULL) \
 	X(STATEMENT_IF,			"IF",		NULL) \
 	X(STATEMENT_AND,		"AND",		NULL) \
@@ -55,16 +55,6 @@ char *statement_names[] = {
 	STATEMENT_TABLE
 };
 #undef X
-
-static void action_input_parser(rule_t *rule, char *line)
-{
-
-}
-
-static void action_output_parser(rule_t *rule, char *line)
-{
-
-}
 
 typedef struct {
 	statement_e statement;
@@ -356,8 +346,8 @@ int rules_read_file_rules(const char *file)
 
 int rules_read_dir(const char *dir, int pass)
 {
-	DIR* FD;
-	struct dirent* in_file;
+	DIR* FD = NULL;
+	struct dirent* in_file = NULL;
 	int ret = -1, files_read = 0;
 
 	eu_log_info("read rules directory: %s", dir);

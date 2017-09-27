@@ -74,7 +74,7 @@ action_type_e action_type_from_char(const char *type_str)
 	if (type_str == NULL)
 		return -1;
 
-	while (action_type_name[i]) {
+	while (action_type_name[i] != NULL) {
 		if (strcmp(action_type_name[i], type_str) == 0) {
 			return (1 << i);
 		}

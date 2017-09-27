@@ -11,7 +11,7 @@
 #include "arguments.h"
 
 /* Default arguments */
-arguments_t arguments = {
+static arguments_t arguments = {
 	.daemonize = false,
 	.config_test = false,
 	.pidfile = "/var/run/domotica-engine.pid",

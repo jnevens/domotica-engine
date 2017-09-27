@@ -40,7 +40,8 @@ device_t *device_list_find_by_name(const char *name)
 	eu_list_node_t *node = NULL;
 	eu_list_for_each(node, devices) {
 		device_t *device = eu_list_node_data(node);
-		if(strcmp(device_get_name(device), name) == 0) {
+		const char *device_name = device_get_name(device);
+		if(device_name && (strcmp(device_name, name) == 0)) {
 			return device;
 		}
 	}
