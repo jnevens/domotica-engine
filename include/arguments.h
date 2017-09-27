@@ -11,6 +11,7 @@
 /* Used by main to communicate with parse_opt. */
 typedef struct arguments {
 	bool daemonize;
+	bool config_test;
 	char *pidfile;
 	char *rulesdir;
 } arguments_t;

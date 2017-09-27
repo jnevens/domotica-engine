@@ -61,6 +61,7 @@ static void fix_time(void)
 
 int main(int argc, char *argv[])
 {
+	int rv = -1;
 	// handle signals
 	signal(SIGTERM, termination_handler);
 	signal(SIGINT, termination_handler);
@@ -88,6 +89,12 @@ int main(int argc, char *argv[])
 	if(rules_read_dir(arguments_get()->rulesdir))
 		goto stop;
 
+	if(arguments_get()->config_test) {
+		eu_log_info("Config tested successfully!");
+		rv = 0;
+		goto stop;
+	}
+
 	// deamonize
 	if(arguments_get()->daemonize) {
 		eu_log_info("Daemonize...");
@@ -100,8 +107,10 @@ int main(int argc, char *argv[])
 
 	// run baby, run!
 	eu_event_loop();
+
+	rv = 0;
 stop:
 	eu_event_loop_cleanup();
 
-	return 0;
+	return rv;
 }

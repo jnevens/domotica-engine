@@ -13,6 +13,7 @@
 /* Default arguments */
 arguments_t arguments = {
 	.daemonize = false,
+	.config_test = false,
 	.pidfile = "/var/run/domotica-engine.pid",
 	.rulesdir = "/etc/domotica-engine/rules.d",
 };
@@ -26,6 +27,7 @@ static char args_doc[] = "";
 /* The options we understand. */
 static struct argp_option options[] = {
 		{ "deamonize",	'D',	0,	0,	"Deamonize application" },
+		{ "testconfig",	't',	0,	0,	"Test config and exit" },
 		{ "pidfile",	'p',	"Pidfile", 0, "PID file (default: /var/run/eltakod.pid)" },
 		{ 0 }
 };
@@ -42,6 +44,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 		break;
 	case 'p':
 		arguments->pidfile = arg;
+		break;
+	case 't':
+		arguments->config_test = true;
 		break;
 	case ARGP_KEY_ARG:
 		break;
