@@ -86,7 +86,9 @@ int main(int argc, char *argv[])
 		goto stop;
 
 	// parse rules
-	if(rules_read_dir(arguments_get()->rulesdir))
+	if(rules_read_dir(arguments_get()->rulesdir, 1))
+		goto stop;
+	if(rules_read_dir(arguments_get()->rulesdir, 2))
 		goto stop;
 
 	if(arguments_get()->config_test) {

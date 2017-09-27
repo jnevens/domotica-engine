@@ -8,6 +8,6 @@
 #ifndef RULE_PARSER_H_
 #define RULE_PARSER_H_
 
-int rules_read_dir(const char *dir);
+int rules_read_dir(const char *dir, int pass);
 
 #endif /* RULE_PARSER_H_ */

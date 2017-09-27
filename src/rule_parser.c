@@ -150,7 +150,7 @@ static line_t *line_parse(char *strline)
 	return line;
 }
 
-int rules_read_file(const char *file)
+int rules_read_file_declarations(const char *file)
 {
 	FILE *fp;
 	int line_nr = 1, ret = 0;
@@ -179,6 +179,7 @@ int rules_read_file(const char *file)
 			}
 
 			switch (ln->statement) {
+			/* declarations */
 			case STATEMENT_INPUT:
 			case STATEMENT_OUTPUT:
 			case STATEMENT_SUNRISET:
@@ -206,6 +207,68 @@ int rules_read_file(const char *file)
 				}
 				break;
 			}
+			/* rules */
+			case STATEMENT_IF:
+			case STATEMENT_AND:
+			case STATEMENT_DO: {
+				break;
+			}
+			default: {
+				eu_log_fatal("Failed to parse device (invalid action): %s (%s:%d)", ln->name, file, line_nr);
+				ret = -1;
+				break;
+			}
+			}
+			if (ret)
+				break;
+			//eu_log_info("%s", line);
+		} else {
+			rule = NULL;
+			schedule = NULL;
+		}
+		line_nr++;
+		line_destroy(ln);
+		ln = NULL;
+	}
+
+	fclose(fp);
+	return ret;
+}
+
+int rules_read_file_rules(const char *file)
+{
+	FILE *fp;
+	int line_nr = 1, ret = 0;
+	eu_log_info("read rules file: %s", file);
+
+	if (NULL == (fp = fopen(file, "r"))) {
+		eu_log_err("Failed to open file: %s", strerror(errno));
+		return -1;
+	}
+
+	char line[256];
+	while (fgets(line, sizeof(line), fp) != NULL) {
+		static rule_t *rule = NULL;
+		static bool schedule = false;
+		line_t *ln = line_parse(line);
+
+		if (ln) {
+			if (schedule)
+				continue;
+
+			switch (ln->statement) {
+			/* declarations */
+			case STATEMENT_INPUT:
+			case STATEMENT_OUTPUT:
+			case STATEMENT_SUNRISET:
+			case STATEMENT_TIMER:
+			case STATEMENT_BOOL:
+			case STATEMENT_SCHEDULE: {
+				if (ln->statement == STATEMENT_SCHEDULE)
+					schedule = true;
+				break;
+			}
+			/* rules */
 			case STATEMENT_IF: {
 				eu_log_debug("Create rule");
 				rule = rule_create();
@@ -280,7 +343,7 @@ int rules_read_file(const char *file)
 			//eu_log_info("%s", line);
 		} else {
 			rule = NULL;
-			schedule = NULL;
+			schedule = false;
 		}
 		line_nr++;
 		line_destroy(ln);
@@ -291,7 +354,7 @@ int rules_read_file(const char *file)
 	return ret;
 }
 
-int rules_read_dir(const char *dir)
+int rules_read_dir(const char *dir, int pass)
 {
 	DIR* FD;
 	struct dirent* in_file;
@@ -320,7 +383,11 @@ int rules_read_dir(const char *dir)
 			break;
 		}
 
-		ret = rules_read_file(file_path);
+		if (pass == 1) {
+			ret = rules_read_file_declarations(file_path);
+		} else {
+			ret = rules_read_file_rules(file_path);
+		}
 		free(file_path);
 
 		if(ret != 0)
