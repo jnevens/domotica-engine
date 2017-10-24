@@ -9,5 +9,6 @@
 #define RULE_PARSER_H_
 
 int rules_read_dir(const char *dir, int pass);
+int rules_read_file(const char *file_path, int pass);
 
 #endif /* RULE_PARSER_H_ */

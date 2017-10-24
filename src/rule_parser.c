@@ -344,6 +344,19 @@ int rules_read_file_rules(const char *file)
 	return ret;
 }
 
+int rules_read_file(const char *file_path, int pass)
+{
+	int ret = -1;
+
+	if (pass == 1) {
+		ret = rules_read_file_declarations(file_path);
+	} else {
+		ret = rules_read_file_rules(file_path);
+	}
+
+	return ret;
+}
+
 int rules_read_dir(const char *dir, int pass)
 {
 	DIR* FD = NULL;
@@ -373,11 +386,8 @@ int rules_read_dir(const char *dir, int pass)
 			break;
 		}
 
-		if (pass == 1) {
-			ret = rules_read_file_declarations(file_path);
-		} else {
-			ret = rules_read_file_rules(file_path);
-		}
+		ret = rules_read_file(file_path, pass);
+
 		free(file_path);
 
 		if(ret != 0)
