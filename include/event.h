@@ -44,6 +44,7 @@ enum event_src_type {
 
 const char *event_get_name(event_t *event);
 device_t *event_get_device(event_t *event);
+event_type_e event_get_type(event_t *event);
 
 bool event_equal(event_t *event1, event_t *event2);
 

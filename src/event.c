@@ -52,6 +52,11 @@ device_t *event_get_device(event_t *event)
 	return (device_t *) event->device;
 }
 
+event_type_e event_get_type(event_t *event)
+{
+	return event->type;
+}
+
 bool event_equal(event_t *event1, event_t *event2)
 {
 	if (event1->src_type != event2->src_type) {

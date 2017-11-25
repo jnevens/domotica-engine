@@ -18,6 +18,7 @@
 #include "event.h"
 #include "action.h"
 #include "engine.h"
+#include "condition.h"
 #include "schedule.h"
 #include "utils_time.h"
 
@@ -42,6 +43,7 @@ struct schedule_s {
 	eu_list_t *entries;
 	char *name;
 	device_t *device;
+	condition_type_e condition;
 };
 
 static schedule_entry_t *schedule_entry_create(int day, int hour, int min, event_t *event)
@@ -145,7 +147,18 @@ static void schedule_check_event(schedule_t *schedule)
 
 	schedule_entry_t *entry = schedule_search_entry(schedule, ts->tm_wday, ts->tm_hour, ts->tm_min);
 	if (entry) {
-		engine_trigger_event(entry->event);
+		event_t *event = entry->event;
+		engine_trigger_event(event);
+
+		switch(event_get_type(event)) {
+		case EVENT_SET:
+			schedule->condition = CONDITION_SET;
+			break;
+		case EVENT_UNSET:
+		default:
+			schedule->condition = CONDITION_UNSET;
+			break;
+		}
 	}
 }
 
@@ -186,12 +199,27 @@ static bool schedule_exec(device_t *device, action_t *action)
 	return false;
 }
 
+static bool schedule_check(device_t *device, condition_t *condition)
+{
+	schedule_t *schedule = device_get_userdata(device);
+
+	eu_log_debug("condition: %s, current value: %d",
+			condition_type_to_char(condition_get_type(condition)),
+			condition_type_to_char(schedule->condition));
+
+	if (condition_get_type(condition) == schedule->condition) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 static device_type_info_t schedule_info = {
 	.name = "SCHEDULE",
-	.events = 0,
+	.events = EVENT_SET | EVENT_UNSET,
 	.actions = 0,
-	.conditions = 0,
-	.check_cb = NULL,
+	.conditions = CONDITION_SET | CONDITION_UNSET,
+	.check_cb = schedule_check,
 	.parse_cb = schedule_parser,
 	.exec_cb = schedule_exec,
 };
