@@ -33,7 +33,7 @@ action_t *action_create(device_t *device, action_type_e action_type, char *optio
 	int i = 1;
 
 	if (!(device_get_supported_action(device) & action_type)) {
-		eu_log_fatal("device %s does not support action: %s", device_get_name(device), action_type_to_char(action_type));
+		eu_log_err("device %s does not support action: %s", device_get_name(device), action_type_to_char(action_type));
 		return NULL;
 	}
 

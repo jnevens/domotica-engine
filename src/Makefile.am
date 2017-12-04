@@ -4,7 +4,7 @@ LDADD =
 sbin_PROGRAMS = domotica-engine
 
 domotica_engine_LDADD = -lvsb -leu -leltako $(LDADD) -lm
-domotica_engine_CFLAGS = -rdynamic -funwind-tables
+domotica_engine_CFLAGS = -rdynamic -funwind-tables -D_GNU_SOURCE
 domotica_engine_SOURCES = \
 	action.c \
 	arguments.c \
@@ -21,6 +21,7 @@ domotica_engine_SOURCES = \
 	engine.c \
 	event.c \
 	gpio.c \
+	line_parser.c \
 	main.c \
 	rule.c \
 	rule_list.c \

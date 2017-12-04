@@ -4,7 +4,6 @@
  *  Created on: Dec 18, 2016
  *      Author: jnevens
  */
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -22,123 +21,18 @@
 #include "rule.h"
 #include "device.h"
 #include "device_list.h"
+#include "line_parser.h"
 #include "rule_list.h"
 #include "schedule.h"
 
-#define LINE_MAX_OPTIONS 10
+
 
 static void action_input_handler(char *line);
 static void action_output_handler(char *line);
 
 // todo rule_t input_t event_t output_t action_t
 
-#define STATEMENT_TABLE \
-	X(STATEMENT_INPUT,		"INPUT",	NULL) \
-	X(STATEMENT_OUTPUT,		"OUTPUT",	NULL) \
-	X(STATEMENT_TIMER,		"TIMER",	NULL) \
-	X(STATEMENT_IF,			"IF",		NULL) \
-	X(STATEMENT_AND,		"AND",		NULL) \
-	X(STATEMENT_DO,			"DO",		NULL) \
-	X(STATEMENT_SUNRISET,	"SUNRISET",	NULL) \
-	X(STATEMENT_SCHEDULE,	"SCHEDULE",	NULL) \
-	X(STATEMENT_BOOL,		"BOOL",		NULL) \
-	X(STATEMENT_INVALID,	NULL,		NULL)
 
-#define X(a, b, c) a,
-typedef enum {
-	STATEMENT_TABLE
-} statement_e;
-#undef X
-
-#define X(a, b, c) b,
-char *statement_names[] = {
-	STATEMENT_TABLE
-};
-#undef X
-
-typedef struct {
-	statement_e statement;
-	char *raw;
-	char *name;
-	char *options[LINE_MAX_OPTIONS];
-	int	options_count;
-} line_t;
-
-static void line_cleanup(char *line) {
-	if(line[strlen(line)-1] == '\n')
-		line[strlen(line) - 1] = '\0';
-}
-
-static bool line_is_comment(const char *line)
-{
-	if (strlen(line) == 0)
-		return true;
-	if (line[0] == '#')
-		return true;
-	return false;
-}
-
-static statement_e line_get_statement(const char *line)
-{
-	int i;
-
-	for(i = 0; statement_names[i] != NULL; i++) {
-		if(strncmp(line, statement_names[i], strlen(statement_names[i])) == 0)
-			break;
-	}
-	return i;
-}
-
-static void line_destroy(line_t *line)
-{
-	if (line) {
-		int i;
-		for (i = 0; i < LINE_MAX_OPTIONS; i++) {
-			free(line->options[i]);
-		}
-		free(line->name);
-		free(line->raw);
-		free(line);
-	}
-}
-
-static line_t *line_parse(char *strline)
-{
-	line_cleanup(strline);
-	if(line_is_comment(strline))
-		return NULL;
-
-	int i, n = 0;
-	char *ln = strdup(strline);
-	line_t *line = calloc(1, sizeof(line_t));
-	line->raw = strdup(strline);
-	line->statement = line_get_statement(strline);
-
-	size_t len = strlen(ln);
-	for(i = 0; i < len; i++) {
-		if(ln[i] == ' ' || ln[i] == '\t')
-			ln[i] = '\0';
-	}
-	for(i = 0; i < len; i++) {
-		if (ln[i] == '\0') {
-			if (n == 0) {
-				line->name = strdup(&ln[i + 1]);
-			} else if (n > 0) {
-				line->options[n-1] = strdup(&ln[i + 1]);
-				line->options_count++;
-			}
-			n++;
-		}
-	}
-
-	free(ln);
-	if (n < 2) {
-		line_destroy(line);
-		line = NULL;
-	}
-
-	return line;
-}
 
 int rules_read_file_declarations(const char *file)
 {
