@@ -24,5 +24,6 @@ typedef enum {
 void schedule_init(void);
 
 bool schedule_parse_line(schedule_t *schedule, const char *line);
+bool schedule_parsing_finished(schedule_t *schedule);
 
 #endif /* SCHEDULE_H_ */

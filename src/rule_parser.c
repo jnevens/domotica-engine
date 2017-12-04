@@ -214,7 +214,10 @@ int rules_read_file_declarations(const char *file)
 			//eu_log_info("%s", line);
 		} else {
 			rule = NULL;
-			schedule = NULL;
+			if (schedule) {
+				schedule_parsing_finished(schedule);
+				schedule = NULL;
+			}
 		}
 		line_nr++;
 		line_destroy(ln);

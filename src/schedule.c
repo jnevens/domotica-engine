@@ -46,6 +46,57 @@ struct schedule_s {
 	condition_type_e condition;
 };
 
+static condition_type_e schedule_get_current_condition(schedule_t *schedule)
+{
+	time_t t = time(NULL);
+	struct tm *ts = localtime(&t);
+	int sched_ts_now = 0, sched_ts_max = 0;
+	condition_type_e condition = CONDITION_UNSET;
+
+	sched_ts_now = + ts->tm_hour * 60 + ts->tm_min;
+	if (schedule->type == SCHEDULE_WEEK) {
+		sched_ts_now += ts->tm_wday * 60 * 24;
+	}
+
+	// get latest entry if we are in front of first entry
+	eu_list_node_t *node_last = eu_list_last(schedule->entries);
+	if (node_last != NULL) {
+		schedule_entry_t *entry = eu_list_node_data(node_last);
+		switch (event_get_type(entry->event)) {
+		case EVENT_SET :
+			condition = CONDITION_SET;
+			break;
+		case EVENT_UNSET :
+			condition = CONDITION_UNSET;
+			break;
+		}
+	}
+
+	eu_list_for_each_declare(node, schedule->entries) {
+		schedule_entry_t *entry = eu_list_node_data(node);
+
+		int entry_ts = entry->hour * 60 + entry->min;
+		if (schedule->type == SCHEDULE_WEEK) {
+			entry_ts += entry->day * 60 * 24;
+		}
+
+		if ((entry_ts > sched_ts_max) && (entry_ts < sched_ts_now)) {
+			switch (event_get_type(entry->event)) {
+			case EVENT_SET :
+				condition = CONDITION_SET;
+				break;
+			case EVENT_UNSET :
+				condition = CONDITION_UNSET;
+				break;
+			}
+			sched_ts_max = entry_ts;
+		}
+	}
+	eu_log_debug("Current condition of schedule %s is: %s", schedule->name, condition_type_to_char(condition));
+
+	return condition;
+}
+
 static schedule_entry_t *schedule_entry_create(int day, int hour, int min, event_t *event)
 {
 	schedule_entry_t *entry = calloc(1, sizeof(schedule_entry_t));
@@ -84,6 +135,7 @@ static schedule_t *schedule_create(const char *name, const char *type)
 
 		schedule->entries = eu_list_create();
 		schedule->name = strdup(name);
+		schedule->condition = CONDITION_UNSET;
 
 		eu_list_append(schedules, schedule);
 	}
@@ -118,6 +170,11 @@ bool schedule_parse_line(schedule_t *schedule, const char *line)
 	return true;
 }
 
+bool schedule_parsing_finished(schedule_t *schedule)
+{
+	schedule->condition = schedule_get_current_condition(schedule);
+}
+
 static schedule_entry_t *schedule_search_entry(schedule_t *schedule, int day, int hour, int min)
 {
 	eu_list_node_t *node;
@@ -137,6 +194,8 @@ static schedule_entry_t *schedule_search_entry(schedule_t *schedule, int day, in
 
 	return NULL;
 }
+
+
 
 static void schedule_check_event(schedule_t *schedule)
 {
