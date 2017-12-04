@@ -136,6 +136,23 @@ static bool fsb14_device_check(device_t *device, condition_t *condition)
 	}
 }
 
+static eu_variant_map_t *fsb14_device_state(device_t *device)
+{
+	device_fsb14_t *fsb14 = device_get_userdata(device);
+	eu_variant_map_t *varmap = eu_variant_map_create();
+
+	// eu_variant_map_set_int32(varmap, "duration", fsb14->duration);
+	if (fsb14->condition == CONDITION_RISING ) {
+		eu_variant_map_set_int32(varmap, "value", 1);
+	} else if (fsb14->condition == CONDITION_DESCENDING ) {
+		eu_variant_map_set_int32(varmap, "value", 2);
+	} else if (fsb14->condition == CONDITION_STOPPED ) {
+		eu_variant_map_set_int32(varmap, "value", 0);
+	}
+
+	return varmap;
+}
+
 static device_type_info_t fsb14_info = {
 	.name = "FSB14",
 	.events = 0,
@@ -144,6 +161,7 @@ static device_type_info_t fsb14_info = {
 	.check_cb = fsb14_device_check,
 	.parse_cb = fsb14_device_parser,
 	.exec_cb = fsb14_device_exec,
+	.state_cb = fsb14_device_state,
 };
 
 bool eltako_fsb14_init(void)

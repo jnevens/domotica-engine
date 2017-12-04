@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 #include <eu/log.h>
+#include <eu/variant_map.h>
 #include <libeltako/message.h>
 #include <libeltako/dimmer.h>
 
@@ -110,6 +111,16 @@ static bool fud14_device_check(device_t *device, condition_t *condition)
 	return false;
 }
 
+static eu_variant_map_t *fud14_device_state(device_t *device)
+{
+	device_fud14_t *fud14 = device_get_userdata(device);
+	eu_variant_map_t *varmap = eu_variant_map_create();
+
+	eu_variant_map_set_int32(varmap, "value", fud14->dim_value);
+
+	return varmap;
+}
+
 static device_type_info_t fud14_info = {
 	.name = "FUD14",
 	.events = 0,
@@ -118,6 +129,7 @@ static device_type_info_t fud14_info = {
 	.check_cb = fud14_device_check,
 	.parse_cb = fud14_device_parser,
 	.exec_cb = fud14_device_exec,
+	.state_cb = fud14_device_state,
 };
 
 bool eltako_fud14_init(void)

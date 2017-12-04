@@ -22,6 +22,7 @@ typedef struct {
 	device_parse_fn_t parse_cb;
 	device_exec_fn_t exec_cb;
 	device_check_fn_t check_cb;
+	device_state_fn_t state_cb;
 	action_type_e actions;
 	event_type_e events;
 	condition_type_e conditions;
@@ -132,6 +133,26 @@ bool device_check(device_t *device, condition_t *condition)
 	return false;
 }
 
+eu_variant_map_t *device_state(device_t *device)
+{
+	eu_list_node_t *node;
+
+	eu_list_for_each(node, device_types)
+	{
+		device_type_t *device_type = eu_list_node_data(node);
+		if (device_type == device->device_type) {
+
+			if (device_type->state_cb) {
+				return device_type->state_cb(device);
+			} else {
+				eu_log_err("No State callback for device type: %s", device_type->name);
+			}
+		}
+	}
+
+	return NULL;
+}
+
 bool device_type_register(device_type_info_t *device_type_info)
 {
 	if (!device_types) {
@@ -146,6 +167,7 @@ bool device_type_register(device_type_info_t *device_type_info)
 	type->parse_cb = device_type_info->parse_cb;
 	type->exec_cb = device_type_info->exec_cb;
 	type->check_cb = device_type_info->check_cb;
+	type->state_cb = device_type_info->state_cb;
 
 	eu_log_info("Register device type: %s", device_type_info->name);
 

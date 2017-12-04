@@ -10,6 +10,8 @@
 
 #include <stdbool.h>
 
+#include <eu/variant_map.h>
+
 #include "types.h"
 
 #include "event.h"
@@ -22,6 +24,7 @@
 typedef bool (*device_parse_fn_t)(device_t *device, char *options[]);
 typedef bool (*device_exec_fn_t)(device_t *device, action_t *action);
 typedef bool (*device_check_fn_t)(device_t *device, condition_t *condition);
+typedef eu_variant_map_t* (*device_state_fn_t)(device_t *device);
 
 typedef struct {
 	char *name;
@@ -31,6 +34,7 @@ typedef struct {
 	device_parse_fn_t parse_cb;
 	device_exec_fn_t exec_cb;
 	device_check_fn_t check_cb;
+	device_state_fn_t state_cb;
 } device_type_info_t;
 
 device_t *device_create(char *name, const char *devtype, char *options[]);
@@ -42,6 +46,7 @@ void *device_get_userdata(device_t *device);
 bool device_set(device_t *device, action_t *action);
 void device_trigger_event(device_t *device, event_type_e event);
 bool device_check(device_t *device, condition_t *condition);
+eu_variant_map_t *device_state(device_t *device);
 
 bool device_type_register(device_type_info_t *device_type_info);
 

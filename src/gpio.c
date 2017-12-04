@@ -185,6 +185,16 @@ static bool gpio_output_exec(device_t *device, action_t *action)
 	return false;
 }
 
+static eu_variant_map_t *gpio_output_state(device_t *device)
+{
+	gpio_t *output_gpio = device_get_userdata(device);
+	eu_variant_map_t *varmap = eu_variant_map_create();
+
+	eu_variant_map_set_int32(varmap, "value", output_gpio->value);
+
+	return varmap;
+}
+
 static device_type_info_t gpi_info = {
 	.name = "GPI",
 	.events = EVENT_PRESS | EVENT_RELEASE | EVENT_SHORT_PRESS | EVENT_LONG_PRESS | EVENT_DIM,
@@ -203,6 +213,7 @@ static device_type_info_t gpo_info = {
 	.check_cb = NULL,
 	.parse_cb = gpio_output_parser,
 	.exec_cb = gpio_output_exec,
+	.state_cb = gpio_output_state,
 };
 
 bool gpio_technology_init(void)
