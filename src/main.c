@@ -16,6 +16,7 @@
 #include "device_list.h"
 #include "utils_time.h"
 #include "schedule.h"
+#include "remote.h"
 
 static void termination_handler(int signum)
 {
@@ -67,6 +68,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT, termination_handler);
 	signal(SIGUSR1, reload_handler);
 	signal(SIGSEGV, segfault_handler);
+	signal(SIGPIPE, SIG_IGN);
 
 	// init event loop
 	eu_event_loop_init();
@@ -96,6 +98,9 @@ int main(int argc, char *argv[])
 		rv = 0;
 		goto stop;
 	}
+
+	// remote
+	remote_connection_init();
 
 	// deamonize
 	if(arguments_get()->daemonize) {

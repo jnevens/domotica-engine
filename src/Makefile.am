@@ -1,7 +1,7 @@
 AM_CPPFLAGS = -I$(src_buildir)/include -I$(top_srcdir)/include
 LDADD =
 
-sbin_PROGRAMS = domotica-engine
+sbin_PROGRAMS = domotica-engine domctl
 
 domotica_engine_LDADD = -lvsb -leu -leltako $(LDADD) -lm
 domotica_engine_CFLAGS = -rdynamic -funwind-tables -D_GNU_SOURCE
@@ -23,6 +23,7 @@ domotica_engine_SOURCES = \
 	gpio.c \
 	line_parser.c \
 	main.c \
+	remote.c \
 	rule.c \
 	rule_list.c \
 	rule_parser.c \
@@ -34,3 +35,9 @@ domotica_engine_SOURCES = \
 	utils_sched.c \
 	utils_sunriset.c \
 	utils_time.c
+
+domctl_LDADD = -leu
+domctl_CFLAGS =
+domctl_SOURCES = \
+	domctl.c
+
