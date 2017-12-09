@@ -63,11 +63,14 @@ static bool fud14_device_exec(device_t *device, action_t *action)
 		fud14->dim_direction = 1;
 		break;
 	case ACTION_TOGGLE:
-		fud14->dim_value = (fud14->dim_value > 0) ? 0 : 100;
+	{
+		int max_dim_value = (action_get_option(action, 1) != NULL) ? atoi(action_get_option(action, 1)) :  100;
+		fud14->dim_value = (fud14->dim_value > 0) ? 0 : max_dim_value;
 		msg = eltako_dimmer_create_message(fud14->address, (fud14->dim_value > 0) ? DIMMER_EVENT_ON : DIMMER_EVENT_OFF,
 				fud14->dim_value, 1, false);
 		fud14->dim_direction = !!!fud14->dim_value;
 		break;
+	}
 	case ACTION_DIM:
 		if (fud14->dim_direction == 1) {
 			fud14->dim_value += fud14->dim_interval;
