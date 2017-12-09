@@ -262,7 +262,7 @@ static bool schedule_check(device_t *device, condition_t *condition)
 {
 	schedule_t *schedule = device_get_userdata(device);
 
-	eu_log_debug("condition: %s, current value: %d",
+	eu_log_debug("condition: %s, current value: %s",
 			condition_type_to_char(condition_get_type(condition)),
 			condition_type_to_char(schedule->condition));
 
