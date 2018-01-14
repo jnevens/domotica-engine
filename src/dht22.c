@@ -301,6 +301,16 @@ static bool dht22_parser(device_t *device, char *options[])
 	return rv;
 }
 
+static bool dht22_device_state(device_t *device, eu_variant_map_t *state)
+{
+	dht22_t *dht22 = device_get_userdata(device);
+
+	eu_variant_map_set_float(state, "temperature", dht22->temperature);
+	eu_variant_map_set_float(state, "humidity", dht22->humidity);
+
+	return true;
+}
+
 static device_type_info_t dht22_info = {
 	.name = "DHT22",
 	.events = EVENT_TEMPERATURE | EVENT_HUMIDITY,
@@ -309,6 +319,7 @@ static device_type_info_t dht22_info = {
 	.check_cb = NULL,
 	.parse_cb = dht22_parser,
 	.exec_cb = NULL,
+	.state_cb = dht22_device_state,
 };
 
 bool dht22_technology_init()
