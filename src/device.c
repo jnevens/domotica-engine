@@ -135,22 +135,28 @@ bool device_check(device_t *device, condition_t *condition)
 
 eu_variant_map_t *device_state(device_t *device)
 {
-	eu_list_node_t *node;
+	eu_list_node_t *node = NULL;
+	eu_variant_map_t *state = NULL;
 
 	eu_list_for_each(node, device_types)
 	{
 		device_type_t *device_type = eu_list_node_data(node);
 		if (device_type == device->device_type) {
 
+			state = eu_variant_map_create();
+
+			eu_variant_map_set_char(state, "name", device->name);
+			eu_variant_map_set_char(state, "devicetype", device_type->name);
+
 			if (device_type->state_cb) {
-				return device_type->state_cb(device);
+				device_type->state_cb(device, state);
 			} else {
 				eu_log_err("No State callback for device type: %s", device_type->name);
 			}
 		}
 	}
 
-	return NULL;
+	return state;
 }
 
 bool device_type_register(device_type_info_t *device_type_info)

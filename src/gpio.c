@@ -185,14 +185,13 @@ static bool gpio_output_exec(device_t *device, action_t *action)
 	return false;
 }
 
-static eu_variant_map_t *gpio_output_state(device_t *device)
+static bool gpio_output_state(device_t *device, eu_variant_map_t *state)
 {
 	gpio_t *output_gpio = device_get_userdata(device);
-	eu_variant_map_t *varmap = eu_variant_map_create();
 
-	eu_variant_map_set_int32(varmap, "value", output_gpio->value);
+	eu_variant_map_set_int32(state, "value", output_gpio->value);
 
-	return varmap;
+	return true;
 }
 
 static device_type_info_t gpi_info = {

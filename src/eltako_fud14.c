@@ -114,14 +114,13 @@ static bool fud14_device_check(device_t *device, condition_t *condition)
 	return false;
 }
 
-static eu_variant_map_t *fud14_device_state(device_t *device)
+static bool fud14_device_state(device_t *device, eu_variant_map_t *state)
 {
 	device_fud14_t *fud14 = device_get_userdata(device);
-	eu_variant_map_t *varmap = eu_variant_map_create();
 
-	eu_variant_map_set_int32(varmap, "value", fud14->dim_value);
+	eu_variant_map_set_int32(state, "value", fud14->dim_value);
 
-	return varmap;
+	return true;
 }
 
 static device_type_info_t fud14_info = {

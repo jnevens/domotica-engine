@@ -14,10 +14,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <error.h>
 
 #include <eu/log.h>
 #include <eu/socket.h>
 #include <eu/event.h>
+#include <eu/variant.h>
 
 #include "device.h"
 #include "device_list.h"
@@ -89,6 +91,21 @@ static void remote_connection_close(eu_socket_t *sock)
 	eu_socket_destroy(sock);
 }
 
+static void strappend(char **base_ptr, const char *append)
+{
+	char *base = *base_ptr;
+	size_t len_base = strlen(base);
+	size_t len_app = strlen(append);
+	size_t len_new = len_base + len_app + 1;
+
+	base = realloc(base, len_new);
+
+	memcpy(base + len_base, append, len_app);
+	base[len_base + len_app] = '\0';
+
+	*base_ptr = base;
+}
+
 static void handle_incoming_conn_event(int fd, short int revents, void *arg)
 {
 	char buf[128];
@@ -99,19 +116,53 @@ static void handle_incoming_conn_event(int fd, short int revents, void *arg)
 
 	int rv = eu_socket_read(conn_sock, buf, sizeof(buf) - 1);
 	if (rv > 0) {
+		char *response = NULL;
 		eu_log_info("Received cmd: %s (rv=%d)", buf, rv);
-		if (handle_command(buf, &map) == true)
+		if (handle_command(buf, &map) == true) {
 			if (map) {
-				char *response = NULL;
-				asprintf(&response, "{\n \"value\" : \"%d\"\n}", eu_variant_map_get_int32(map, "value"));
-				eu_socket_write(conn_sock, response, strlen(response) + 1);
+				response = strdup("{\n");
+				int map_count = eu_variant_map_count(map);
+				int count = 1;
+				eu_variant_map_for_each_pair(pair, map) {
+					char tmp[128];
+					const char *key = eu_variant_map_pair_get_key(pair);
+					eu_variant_t *var = eu_variant_map_pair_get_val(pair);
+
+					if (eu_variant_type(var) == EU_VARIANT_TYPE_INT32) {
+						sprintf(tmp, "\t\"%s\" : \"%d\"", key, eu_variant_int32(var));
+					}else if (eu_variant_type(var) == EU_VARIANT_TYPE_CHAR) {
+						sprintf(tmp, "\t\"%s\" : \"%s\"", key, eu_variant_char(var));
+					}else if (eu_variant_type(var) == EU_VARIANT_TYPE_FLOAT) {
+						sprintf(tmp, "\t\"%s\" : \"%f\"", key, eu_variant_float(var));
+					}
+
+					strappend(&response, tmp);
+					if (count < map_count)
+						strappend(&response, ",");
+					strappend(&response, "\n");
+					count++;
+				}
+				strappend(&response, "}\n");
 			} else {
-				eu_socket_write(conn_sock, "OK", 3);
+				response = strdup("OK");
 			}
-		else
-			eu_socket_write(conn_sock, "NOK", 4);
+		} else {
+			response = strdup("NOK");
+		}
+
+		if (response) {
+			size_t rv = eu_socket_write(conn_sock, response, strlen(response) + 1);
+			if (rv == 1)
+				eu_log_debug("send response [%d]: '%s'", strlen(response) + 1, response);
+			else
+				eu_log_err("send response [%d]: '%s' ERR %d:%s", strlen(response) + 1, response, errno, strerror(errno));
+		}
 	} else {
 		remote_connection_close(conn_sock);
+	}
+
+	if (map) {
+		eu_variant_map_destroy(map);
 	}
 }
 

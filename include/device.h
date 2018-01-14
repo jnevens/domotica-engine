@@ -24,7 +24,7 @@
 typedef bool (*device_parse_fn_t)(device_t *device, char *options[]);
 typedef bool (*device_exec_fn_t)(device_t *device, action_t *action);
 typedef bool (*device_check_fn_t)(device_t *device, condition_t *condition);
-typedef eu_variant_map_t* (*device_state_fn_t)(device_t *device);
+typedef bool (*device_state_fn_t)(device_t *device, eu_variant_map_t *state);
 
 typedef struct {
 	char *name;

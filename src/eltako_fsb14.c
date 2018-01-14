@@ -49,9 +49,9 @@ static bool fsb14_timer_callback(void *arg)
 
 	fsb14->condition = CONDITION_STOPPED;
 	if (fsb14->last_action == ACTION_UP) {
-		fsb14->condition |= CONDITION_UP;
+		fsb14->condition = CONDITION_UP;
 	} else if (fsb14->last_action == ACTION_DOWN) {
-		fsb14->condition |= CONDITION_DOWN;
+		fsb14->condition = CONDITION_DOWN;
 	}
 	fsb14->last_action = ACTION_STOP;
 	fsb14->timer = NULL;
@@ -67,27 +67,27 @@ static bool fsb14_device_exec(device_t *device, action_t *action)
 
 	switch (action_get_type(action)) {
 	case ACTION_TOGGLE_UP: {
-		if (fsb14->condition & CONDITION_STOPPED) {
-			data[1] = 0x01; // rise
+		if (fsb14->condition == CONDITION_STOPPED || fsb14->condition == CONDITION_DOWN) {
+			data[1] = 0x01; // open
 		} else {
 			data[1] = 0x00; // stop
 		}
 		break;
 	}
 	case ACTION_TOGGLE_DOWN: {
-		if (fsb14->condition & CONDITION_STOPPED) {
-			data[1] = 0x02; // descend
+		if (fsb14->condition == CONDITION_STOPPED || fsb14->condition == CONDITION_UP) {
+			data[1] = 0x02; // close
 		} else {
 			data[1] = 0x00; // stop
 		}
 		break;
 	}
 	case ACTION_UP: {
-		data[1] = 0x01; // rise
+		data[1] = 0x01; // open
 		break;
 	}
 	case ACTION_DOWN: {
-		data[1] = 0x02; // descend
+		data[1] = 0x02; // close
 		break;
 	}
 	case ACTION_STOP: {
@@ -136,21 +136,26 @@ static bool fsb14_device_check(device_t *device, condition_t *condition)
 	}
 }
 
-static eu_variant_map_t *fsb14_device_state(device_t *device)
+static bool fsb14_device_state(device_t *device, eu_variant_map_t *varmap)
 {
 	device_fsb14_t *fsb14 = device_get_userdata(device);
-	eu_variant_map_t *varmap = eu_variant_map_create();
 
 	// eu_variant_map_set_int32(varmap, "duration", fsb14->duration);
-	if (fsb14->condition == CONDITION_RISING ) {
-		eu_variant_map_set_int32(varmap, "value", 1);
+	if (fsb14->condition == CONDITION_DOWN ) {
+		eu_variant_map_set_char(varmap, "value", "closed");
+	} else if (fsb14->condition == CONDITION_UP ) {
+		eu_variant_map_set_char(varmap, "value", "open");
+	} else if (fsb14->condition == CONDITION_RISING ) {
+		eu_variant_map_set_char(varmap, "value", "opening");
 	} else if (fsb14->condition == CONDITION_DESCENDING ) {
-		eu_variant_map_set_int32(varmap, "value", 2);
+		eu_variant_map_set_char(varmap, "value", "closing");
 	} else if (fsb14->condition == CONDITION_STOPPED ) {
-		eu_variant_map_set_int32(varmap, "value", 0);
+		eu_variant_map_set_char(varmap, "value", "stopped");
+	} else {
+		eu_variant_map_set_char(varmap, "value", "unknown");
 	}
 
-	return varmap;
+	return true;
 }
 
 static device_type_info_t fsb14_info = {
