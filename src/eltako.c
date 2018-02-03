@@ -84,6 +84,8 @@ static bool eltako_connect_with_eltakod(void)
 	vsb_client_register_incoming_data_cb(vsb_client, incoming_data, NULL);
 	eu_event_add(eltako_fd, POLLIN, handle_incoming_event, NULL, vsb_client);
 	vsb_client_register_disconnect_cb(vsb_client, handle_connection_disconnect, NULL);
+
+	eu_log_info("Eltako registered (fd = %d)", eltako_fd);
 }
 
 bool eltako_technology_init(void)

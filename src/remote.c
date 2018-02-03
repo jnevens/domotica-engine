@@ -183,7 +183,7 @@ static void handle_incoming_event(int fd, short int revents, void *arg)
 	eu_event_t *event = eu_event_add(eu_socket_get_fd(new), POLLIN, handle_incoming_conn_event,
 			handle_incoming_conn_error, new);
 	eu_socket_set_userdata(new, event);
-	eu_log_info("remote, incoming event!");
+	eu_log_info("remote, incoming event! new socket: %d", eu_socket_get_fd(new));
 }
 
 static void handle_incoming_error(int fd, short int revents, void *arg)
