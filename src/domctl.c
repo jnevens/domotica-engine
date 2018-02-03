@@ -19,7 +19,7 @@ void usage(void)
 
 int main(int argc, char *argv[])
 {
-	char buf[256];
+	char buf[1024];
 
 	if (argc < 1) {
 		usage();
