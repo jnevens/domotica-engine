@@ -36,6 +36,14 @@ typedef enum {
 typedef struct {
 	double lat;
 	double lon;
+	double rise;
+	double set;
+	double rise_civ;
+	double set_civ;
+	double rise_naut;
+	double set_naut;
+	double rise_astr;
+	double set_astr;
 	eu_event_timer_t *midnight;
 	eu_event_timer_t *sunriset_timers[SUNRISET_EVENT_COUNT];
 } sunriset_t;
@@ -174,6 +182,15 @@ static void sunriset_calculate(device_t *device)
 		TMOD(HOURS(rise_astr)), MINUTES(rise_astr), tm->tm_zone,
 		TMOD(HOURS(set_astr)), MINUTES(set_astr), tm->tm_zone);
 
+	sr->rise = rise;
+	sr->set = set;
+	sr->rise_civ = rise_civ;
+	sr->set_civ = set_civ;
+	sr->rise_naut = rise_naut;
+	sr->set_naut = set_naut;
+	sr->rise_astr = rise_astr;
+	sr->set_astr = set_astr;
+
 	sunriset_create_event_timer(device, SUNRISET_EVENT_RISE, TMOD(HOURS(rise)), MINUTES(rise));
 	sunriset_create_event_timer(device, SUNRISET_EVENT_SET, TMOD(HOURS(set)), MINUTES(set));
 	sunriset_create_event_timer(device, SUNRISET_EVENT_RISE_CIV, TMOD(HOURS(rise_civ)), MINUTES(rise_civ));
@@ -253,6 +270,34 @@ static bool sunriset_parser(device_t *device, char *options[])
 	return false;
 }
 
+static bool sunrised_device_state(device_t *device, eu_variant_map_t *varmap)
+{
+	char buf[32];
+	sunriset_t *sr = device_get_userdata(device);
+
+	eu_variant_map_set_float(varmap, "latitude", sr->lat);
+	eu_variant_map_set_float(varmap, "longitude", sr->lon);
+
+	sprintf(buf, "%2.2d:%2.2d", TMOD(HOURS(sr->rise_astr)), MINUTES(sr->rise_astr));
+	eu_variant_map_set_char(varmap, "sunrise astronomical", buf);
+	sprintf(buf, "%2.2d:%2.2d", TMOD(HOURS(sr->rise_naut)), MINUTES(sr->rise_naut));
+	eu_variant_map_set_char(varmap, "sunrise nautical", buf);
+	sprintf(buf, "%2.2d:%2.2d", TMOD(HOURS(sr->rise_civ)), MINUTES(sr->rise_civ));
+	eu_variant_map_set_char(varmap, "sunrise civilian", buf);
+	sprintf(buf, "%2.2d:%2.2d", TMOD(HOURS(sr->rise)), MINUTES(sr->rise));
+	eu_variant_map_set_char(varmap, "sunrise", buf);
+	sprintf(buf, "%2.2d:%2.2d", TMOD(HOURS(sr->set)), MINUTES(sr->set));
+	eu_variant_map_set_char(varmap, "sunset", buf);
+	sprintf(buf, "%2.2d:%2.2d", TMOD(HOURS(sr->set_civ)), MINUTES(sr->set_civ));
+	eu_variant_map_set_char(varmap, "sunset civilian", buf);
+	sprintf(buf, "%2.2d:%2.2d", TMOD(HOURS(sr->set_naut)), MINUTES(sr->set_naut));
+	eu_variant_map_set_char(varmap, "sunset nautical", buf);
+	sprintf(buf, "%2.2d:%2.2d", TMOD(HOURS(sr->set_astr)), MINUTES(sr->set_astr));
+	eu_variant_map_set_char(varmap, "sunset astronomical", buf);
+
+	return true;
+}
+
 static device_type_info_t sunriset_info = {
 	.name = "SUNRISET",
 	.events =	EVENT_SUNRISE | EVENT_SUNSET |
@@ -264,6 +309,7 @@ static device_type_info_t sunriset_info = {
 	.check_cb = NULL,
 	.parse_cb = sunriset_parser,
 	.exec_cb = NULL,
+	.state_cb = sunrised_device_state,
 };
 
 bool sunriset_technology_init(void)
