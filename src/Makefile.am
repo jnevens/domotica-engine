@@ -3,7 +3,7 @@ LDADD =
 
 sbin_PROGRAMS = domotica-engine domctl
 
-domotica_engine_LDADD = -lvsb -leu -leltako $(LDADD) -lm
+domotica_engine_LDADD = -leu $(LDADD) -lm
 domotica_engine_CFLAGS = -rdynamic -funwind-tables -D_GNU_SOURCE
 domotica_engine_SOURCES = \
 	action.c \
@@ -13,11 +13,6 @@ domotica_engine_SOURCES = \
 	device.c \
 	device_list.c \
 	dht22.c \
-	eltako.c \
-	eltako_fsb14.c \
-	eltako_fsr14.c \
-	eltako_fts14em.c \
-	eltako_fud14.c \
 	engine.c \
 	event.c \
 	gpio.c \
@@ -35,6 +30,16 @@ domotica_engine_SOURCES = \
 	utils_sched.c \
 	utils_sunriset.c \
 	utils_time.c
+
+if HAVE_MOD_ELTAKO
+domotica_engine_LDADD += -lvsb -leltako
+domotica_engine_SOURCES += \
+	eltako.c \
+	eltako_fsb14.c \
+	eltako_fsr14.c \
+	eltako_fts14em.c \
+	eltako_fud14.c
+endif
 
 domctl_LDADD = -leu
 domctl_CFLAGS =

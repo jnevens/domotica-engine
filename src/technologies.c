@@ -9,6 +9,7 @@
 
 #include <eu/log.h>
 
+#include "config.h"
 #include "eltako.h"
 #include "gpio.h"
 #include "technologies.h"
@@ -29,11 +30,13 @@ static technology_t technologies[] = {
 				.name = "Timer",
 				.exit_on_fail = true,
 		},
+#ifdef ENABLE_MOD_ELTAKO
 		{
 				.init_fn = eltako_technology_init,
 				.name = "Eltako Series 14",
 				.exit_on_fail = false,
 		},
+#endif
 		{
 				.init_fn = gpio_technology_init,
 				.name = "GPIO",

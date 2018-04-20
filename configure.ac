@@ -42,6 +42,9 @@ AX_VALGRIND_CHECK
 AC_PROG_CC
 AC_PROG_CC_C99
 
+# Check libs
+AC_HAVE_LIBRARY(eu,,AC_MSG_ERROR([libeu is required for building domotica-engine]))
+
 # gcov coverage reporting
 
 m4_include([m4/gcov.m4])
@@ -67,5 +70,18 @@ AC_CONFIG_FILES([
 	src/Makefile
 	tests/Makefile
 ])
+
+# Modules
+AC_ARG_ENABLE(mod_eltako,
+AS_HELP_STRING([--enable-mod-eltako],
+               [Enable eltako module (needs libEltako)]),
+[use_mod_eltako=yes], [use_mod_eltako=no])
+AM_CONDITIONAL([HAVE_MOD_ELTAKO], test "x$use_mod_eltako" = "xyes")
+
+if test "x$use_mod_eltako" = "xyes"; then
+	AC_DEFINE(ENABLE_MOD_ELTAKO, 1, "Enable module eltako")
+	AC_HAVE_LIBRARY(eltako, , AC_MSG_ERROR([libeltako is required for --enable-mod-eltako]))
+	AC_HAVE_LIBRARY(vsb, , AC_MSG_ERROR([libvsb is required for --enable-mod-eltako]))
+fi
 
 AC_OUTPUT
