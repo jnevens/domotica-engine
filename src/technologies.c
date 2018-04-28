@@ -11,6 +11,7 @@
 
 #include "config.h"
 #include "eltako.h"
+#include "soltracker.h"
 #include "gpio.h"
 #include "technologies.h"
 #include "timer.h"
@@ -35,6 +36,13 @@ static technology_t technologies[] = {
 				.init_fn = eltako_technology_init,
 				.name = "Eltako Series 14",
 				.exit_on_fail = false,
+		},
+#endif
+#ifdef ENABLE_MOD_SOLTRACKER
+		{
+				.init_fn = soltracker_technology_init,
+				.name = "Soltracker",
+				.exit_on_fail = true,
 		},
 #endif
 		{

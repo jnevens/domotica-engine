@@ -67,6 +67,7 @@ int rules_read_file_declarations(const char *file)
 			case STATEMENT_INPUT:
 			case STATEMENT_OUTPUT:
 			case STATEMENT_SUNRISET:
+			case STATEMENT_SOLTRACKER:
 			case STATEMENT_TIMER:
 			case STATEMENT_BOOL:
 			case STATEMENT_SCHEDULE: {
@@ -75,6 +76,8 @@ int rules_read_file_declarations(const char *file)
 					devtype = "TIMER";
 				if (ln->statement == STATEMENT_SUNRISET)
 					devtype = "SUNRISET";
+				if (ln->statement == STATEMENT_SOLTRACKER)
+					devtype = "SOLTRACKER";
 				if (ln->statement == STATEMENT_SCHEDULE)
 					devtype = "SCHEDULE";
 				if (ln->statement == STATEMENT_BOOL)
@@ -148,6 +151,7 @@ int rules_read_file_rules(const char *file)
 			case STATEMENT_INPUT:
 			case STATEMENT_OUTPUT:
 			case STATEMENT_SUNRISET:
+			case STATEMENT_SOLTRACKER:
 			case STATEMENT_TIMER:
 			case STATEMENT_BOOL:
 			case STATEMENT_SCHEDULE: {

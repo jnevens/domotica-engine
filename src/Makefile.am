@@ -41,6 +41,12 @@ domotica_engine_SOURCES += \
 	eltako_fud14.c
 endif
 
+if HAVE_MOD_SOLTRACK
+domotica_engine_LDADD += -lSolTrack
+domotica_engine_SOURCES += \
+	soltracker.c
+endif
+
 domctl_LDADD = -leu
 domctl_CFLAGS =
 domctl_SOURCES = \

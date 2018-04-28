@@ -72,6 +72,17 @@ AC_CONFIG_FILES([
 ])
 
 # Modules
+AC_ARG_ENABLE(mod_soltrack,
+AS_HELP_STRING([--enable-mod-soltrack],
+               [Enable solar track module (needs libSolTrack)]),
+[use_mod_soltrack=yes], [use_mod_soltrack=no])
+AM_CONDITIONAL([HAVE_MOD_SOLTRACK], test "x$use_mod_soltrack" = "xyes")
+
+if test "x$use_mod_soltrack" = "xyes"; then
+	AC_DEFINE(ENABLE_MOD_SOLTRACK, 1, "Enable module soltrack")
+	AC_HAVE_LIBRARY(SolTrack, LIBM="$LIBM -lm", AC_MSG_ERROR([libSolTrack is required for --enable-mod-soltrack]), -lm)
+fi
+
 AC_ARG_ENABLE(mod_eltako,
 AS_HELP_STRING([--enable-mod-eltako],
                [Enable eltako module (needs libEltako)]),
