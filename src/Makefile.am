@@ -1,5 +1,6 @@
 AM_CPPFLAGS = -I$(src_buildir)/include -I$(top_srcdir)/include
 LDADD =
+domotica_engine_dir = $(sysconfdir)/domotica-engine
 
 sbin_PROGRAMS = domotica-engine domctl
 
@@ -51,4 +52,7 @@ domctl_LDADD = -leu
 domctl_CFLAGS =
 domctl_SOURCES = \
 	domctl.c
+
+install-data-local:
+	mkdir -p $(DESTDIR)/$(domotica_engine_dir)/rules.d/
 
