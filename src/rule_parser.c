@@ -54,60 +54,64 @@ int rules_read_file_declarations(const char *file)
 		if (ln) {
 			if (schedule) {
 				if (schedule_parse_line(schedule, ln->raw)) {
+					line_destroy(ln);
 					continue;
 				} else {
 					eu_log_fatal("Failed to parse device (invalid action): %s (%s:%d)", ln->name, file, line_nr);
+					line_destroy(ln);
 					ret = -1;
 					break;
 				}
 			}
 
 			switch (ln->statement) {
-			/* declarations */
-			case STATEMENT_INPUT:
-			case STATEMENT_OUTPUT:
-			case STATEMENT_SUNRISET:
-			case STATEMENT_SOLTRACKER:
-			case STATEMENT_TIMER:
-			case STATEMENT_BOOL:
-			case STATEMENT_SCHEDULE: {
-				const char *devtype = ln->options[0];
-				if (ln->statement == STATEMENT_TIMER)
-					devtype = "TIMER";
-				if (ln->statement == STATEMENT_SUNRISET)
-					devtype = "SUNRISET";
-				if (ln->statement == STATEMENT_SOLTRACKER)
-					devtype = "SOLTRACKER";
-				if (ln->statement == STATEMENT_SCHEDULE)
-					devtype = "SCHEDULE";
-				if (ln->statement == STATEMENT_BOOL)
-					devtype = "BOOL";
-				device_t *device = device_create(ln->name, devtype, ln->options);
-				if (device) {
-					device_list_add(device);
-					if (ln->statement == STATEMENT_SCHEDULE) {
-						schedule = device_get_userdata(device);
+				/* declarations */
+				case STATEMENT_INPUT:
+				case STATEMENT_OUTPUT:
+				case STATEMENT_SUNRISET:
+				case STATEMENT_SOLTRACKER:
+				case STATEMENT_TIMER:
+				case STATEMENT_BOOL:
+				case STATEMENT_SCHEDULE: {
+					const char *devtype = ln->options[0];
+					if (ln->statement == STATEMENT_TIMER)
+						devtype = "TIMER";
+					if (ln->statement == STATEMENT_SUNRISET)
+						devtype = "SUNRISET";
+					if (ln->statement == STATEMENT_SOLTRACKER)
+						devtype = "SOLTRACKER";
+					if (ln->statement == STATEMENT_SCHEDULE)
+						devtype = "SCHEDULE";
+					if (ln->statement == STATEMENT_BOOL)
+						devtype = "BOOL";
+					device_t *device = device_create(ln->name, devtype, ln->options);
+					if (device) {
+						device_list_add(device);
+						if (ln->statement == STATEMENT_SCHEDULE) {
+							schedule = device_get_userdata(device);
+						}
+					} else {
+						eu_log_fatal("Failed to parse device: %s (%s:%d)", ln->name, file, line_nr);
+						ret = -1;
 					}
-				} else {
-					eu_log_fatal("Failed to parse device: %s (%s:%d)", ln->name, file, line_nr);
-					ret = -1;
+					break;
 				}
+				/* rules */
+				case STATEMENT_IF:
+				case STATEMENT_AND:
+				case STATEMENT_DO: {
+					break;
+				}
+				default: {
+					eu_log_fatal("Failed to parse device (invalid action): %s (%s:%d)", ln->name, file, line_nr);
+					ret = -1;
+					break;
+				}
+			}
+			if (ret) {
+				line_destroy(ln);
 				break;
 			}
-			/* rules */
-			case STATEMENT_IF:
-			case STATEMENT_AND:
-			case STATEMENT_DO: {
-				break;
-			}
-			default: {
-				eu_log_fatal("Failed to parse device (invalid action): %s (%s:%d)", ln->name, file, line_nr);
-				ret = -1;
-				break;
-			}
-			}
-			if (ret)
-				break;
 			//eu_log_info("%s", line);
 		} else {
 			rule = NULL;
@@ -143,94 +147,98 @@ int rules_read_file_rules(const char *file)
 		line_t *ln = line_parse(line);
 
 		if (ln) {
-			if (schedule)
+			if (schedule) {
+				line_destroy(ln);
 				continue;
+			}
 
 			switch (ln->statement) {
-			/* declarations */
-			case STATEMENT_INPUT:
-			case STATEMENT_OUTPUT:
-			case STATEMENT_SUNRISET:
-			case STATEMENT_SOLTRACKER:
-			case STATEMENT_TIMER:
-			case STATEMENT_BOOL:
-			case STATEMENT_SCHEDULE: {
-				if (ln->statement == STATEMENT_SCHEDULE)
-					schedule = true;
-				break;
-			}
-			/* rules */
-			case STATEMENT_IF: {
-				eu_log_debug("Create rule");
-				rule = rule_create();
-				device_t *device = device_list_find_by_name(ln->name);
-				if (!device) {
-					eu_log_err("Cannot find device: %s", ln->name);
+				/* declarations */
+				case STATEMENT_INPUT:
+				case STATEMENT_OUTPUT:
+				case STATEMENT_SUNRISET:
+				case STATEMENT_SOLTRACKER:
+				case STATEMENT_TIMER:
+				case STATEMENT_BOOL:
+				case STATEMENT_SCHEDULE: {
+					if (ln->statement == STATEMENT_SCHEDULE)
+						schedule = true;
+					break;
+				}
+				/* rules */
+				case STATEMENT_IF: {
+					eu_log_debug("Create rule");
+					rule = rule_create();
+					device_t *device = device_list_find_by_name(ln->name);
+					if (!device) {
+						eu_log_err("Cannot find device: %s", ln->name);
+						ret = -1;
+						break;
+					}
+					event_type_e event_type = event_type_from_char(ln->options[0]);
+					if (event_type == -1) {
+						eu_log_err("Event '%s' does not exist!", ln->options[0]);
+						ret = -1;
+						break;
+					}
+					eu_log_debug("Rule add event: %s %s", ln->name, ln->options[0]);
+					event_t *event = event_create(device, event_type);
+					rule_add_event(rule, event);
+					rule_list_add(rule);
+					break;
+				}
+				case STATEMENT_AND: {
+					eu_log_debug("Rule add condition: %s %s", ln->name, ln->options[0]);
+					if (!rule) {
+						eu_log_fatal("No IF before AND! (%s:%d)", file, line_nr);
+					}
+					device_t *device = device_list_find_by_name(ln->name);
+					if (!device) {
+						eu_log_err("Cannot find device: %s", ln->name);
+						ret = -1;
+						break;
+					}
+					condition_type_e condition_type = condition_type_from_char(ln->options[0]);
+					if (condition_type == -1) {
+						eu_log_err("Action '%s' does not exist!", ln->options[0]);
+						ret = -1;
+						break;
+					}
+					condition_t *condition = condition_create(device, condition_type, ln->options);
+					rule_add_condition(rule, condition);
+					break;
+				}
+				case STATEMENT_DO: {
+					eu_log_debug("Rule add action: %s %s", ln->name, ln->options[0]);
+					if (!rule) {
+						eu_log_fatal("No IF before DO! (%s:%d)", file, line_nr);
+					}
+					device_t *device = device_list_find_by_name(ln->name);
+					if (!device) {
+						eu_log_err("Cannot find device: %s", ln->name);
+						ret = -1;
+						break;
+					}
+					action_type_e action_type = action_type_from_char(ln->options[0]);
+					if (action_type == -1) {
+						eu_log_err("Action '%s' does not exist!", ln->options[0]);
+						ret = -1;
+						break;
+					}
+					action_t *action = action_create(device, action_type, ln->options);
+					rule_add_action(rule, action);
+					break;
+				}
+				default: {
+					eu_log_fatal("Failed to parse device (invalid action): %s (%s:%d)", ln->name, file, line_nr);
 					ret = -1;
 					break;
 				}
-				event_type_e event_type = event_type_from_char(ln->options[0]);
-				if (event_type == -1) {
-					eu_log_err("Event '%s' does not exist!", ln->options[0]);
-					ret = -1;
-					break;
-				}
-				eu_log_debug("Rule add event: %s %s", ln->name, ln->options[0]);
-				event_t *event = event_create(device, event_type);
-				rule_add_event(rule, event);
-				rule_list_add(rule);
+			}
+			if (ret) {
+				line_destroy(ln);
 				break;
 			}
-			case STATEMENT_AND: {
-				eu_log_debug("Rule add condition: %s %s", ln->name, ln->options[0]);
-				if (!rule) {
-					eu_log_fatal("No IF before AND! (%s:%d)", file, line_nr);
-				}
-				device_t *device = device_list_find_by_name(ln->name);
-				if (!device) {
-					eu_log_err("Cannot find device: %s", ln->name);
-					ret = -1;
-					break;
-				}
-				condition_type_e condition_type = condition_type_from_char(ln->options[0]);
-				if (condition_type == -1) {
-					eu_log_err("Action '%s' does not exist!", ln->options[0]);
-					ret = -1;
-					break;
-				}
-				condition_t *condition = condition_create(device, condition_type, ln->options);
-				rule_add_condition(rule, condition);
-				break;
-			}
-			case STATEMENT_DO: {
-				eu_log_debug("Rule add action: %s %s", ln->name, ln->options[0]);
-				if (!rule) {
-					eu_log_fatal("No IF before DO! (%s:%d)", file, line_nr);
-				}
-				device_t *device = device_list_find_by_name(ln->name);
-				if (!device) {
-					eu_log_err("Cannot find device: %s", ln->name);
-					ret = -1;
-					break;
-				}
-				action_type_e action_type = action_type_from_char(ln->options[0]);
-				if (action_type == -1) {
-					eu_log_err("Action '%s' does not exist!", ln->options[0]);
-					ret = -1;
-					break;
-				}
-				action_t *action = action_create(device, action_type, ln->options);
-				rule_add_action(rule, action);
-				break;
-			}
-			default: {
-				eu_log_fatal("Failed to parse device (invalid action): %s (%s:%d)", ln->name, file, line_nr);
-				ret = -1;
-				break;
-			}
-			}
-			if (ret)
-				break;
 			//eu_log_info("%s", line);
 		} else {
 			rule = NULL;
