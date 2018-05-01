@@ -12,7 +12,7 @@ START_TEST(test_demo)
 {
 	char *string = calloc(1, 20);
 	ck_assert_ptr_ne(string, NULL);
-	free(string)
+	free(string);
 }
 END_TEST
 
