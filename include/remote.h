@@ -9,5 +9,6 @@
 #define REMOTE_H_
 
 bool remote_connection_init(void);
+void remote_connection_cleanup(void);
 
 #endif /* REMOTE_H_ */

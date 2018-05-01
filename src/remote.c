@@ -26,6 +26,9 @@
 #include "action.h"
 #include "line_parser.h"
 
+static eu_event_t *event_tcp = NULL;
+static eu_event_t *event_unix = NULL;
+
 static bool handle_command(char *buf, eu_variant_map_t **map)
 {
 	bool rv = false;
@@ -66,10 +69,8 @@ static bool handle_command(char *buf, eu_variant_map_t **map)
 				eu_log_err("Cannot get state of device: %s", ln->name);
 				goto end;
 			} else {
-				eu_log_info("value: %d", eu_variant_map_get_int32(*map, "value"));
 				rv = true;
 			}
-
 			break;
 		}
 		default:
@@ -85,7 +86,6 @@ static bool handle_command(char *buf, eu_variant_map_t **map)
 
 static void remote_connection_close(eu_socket_t *sock)
 {
-	eu_log_info("closing connection: fd = %d", eu_socket_get_fd(sock));
 	eu_event_t *event = eu_socket_get_userdata(sock);
 	eu_event_destroy(event);
 	eu_socket_destroy(sock);
@@ -93,12 +93,12 @@ static void remote_connection_close(eu_socket_t *sock)
 
 static void strappend(char **base_ptr, const char *append)
 {
-	char *base = *base_ptr;
-	size_t len_base = strlen(base);
+	char *base = NULL;
+	size_t len_base = strlen(*base_ptr);
 	size_t len_app = strlen(append);
 	size_t len_new = len_base + len_app + 1;
 
-	base = realloc(base, len_new);
+	base = realloc(*base_ptr, len_new);
 
 	memcpy(base + len_base, append, len_app);
 	base[len_base + len_app] = '\0';
@@ -117,7 +117,6 @@ static void handle_incoming_conn_event(int fd, short int revents, void *arg)
 	int rv = eu_socket_read(conn_sock, buf, sizeof(buf) - 1);
 	if (rv > 0) {
 		char *response = NULL;
-		eu_log_info("Received cmd: %s (rv=%d)", buf, rv);
 		if (handle_command(buf, &map) == true) {
 			if (map) {
 				response = strdup("{\n");
@@ -131,7 +130,7 @@ static void handle_incoming_conn_event(int fd, short int revents, void *arg)
 					if (eu_variant_type(var) == EU_VARIANT_TYPE_INT32) {
 						sprintf(tmp, "\t\"%s\" : \"%d\"", key, eu_variant_int32(var));
 					}else if (eu_variant_type(var) == EU_VARIANT_TYPE_CHAR) {
-						sprintf(tmp, "\t\"%s\" : \"%s\"", key, eu_variant_char(var));
+						sprintf(tmp, "\t\"%s\" : \"%s\"", key, eu_variant_da_char(var));
 					}else if (eu_variant_type(var) == EU_VARIANT_TYPE_FLOAT) {
 						sprintf(tmp, "\t\"%s\" : \"%f\"", key, eu_variant_float(var));
 					}
@@ -150,13 +149,14 @@ static void handle_incoming_conn_event(int fd, short int revents, void *arg)
 			response = strdup("NOK");
 		}
 
+		eu_log_info("Received cmd: %s (response:%s)", buf, response);
+
 		if (response) {
-			size_t rv = eu_socket_write(conn_sock, response, strlen(response) + 1);
-			if (rv == 1)
-				eu_log_debug("send response [%d]: '%s'", strlen(response) + 1, response);
-			else
+			if (eu_socket_write(conn_sock, response, strlen(response) + 1) <=0 ) {
 				eu_log_err("send response [%d]: '%s' ERR %d:%s", strlen(response) + 1, response, errno, strerror(errno));
+			}
 		}
+		free(response);
 	} else {
 		remote_connection_close(conn_sock);
 	}
@@ -183,7 +183,6 @@ static void handle_incoming_event(int fd, short int revents, void *arg)
 	eu_event_t *event = eu_event_add(eu_socket_get_fd(new), POLLIN, handle_incoming_conn_event,
 			handle_incoming_conn_error, new);
 	eu_socket_set_userdata(new, event);
-	eu_log_info("remote, incoming event! new socket: %d", eu_socket_get_fd(new));
 }
 
 static void handle_incoming_error(int fd, short int revents, void *arg)
@@ -191,54 +190,92 @@ static void handle_incoming_error(int fd, short int revents, void *arg)
 	eu_log_info("remote, incoming event error");
 }
 
-static bool remote_connection_init_unix(const char *unix_path)
+static eu_event_t *remote_connection_init_unix(const char *unix_path)
 {
 	eu_socket_t *socket = eu_socket_create_unix();
 	if (socket == NULL) {
 		eu_log_err("Failed to create socket: %s", strerror(errno));
-		return false;
+		return NULL;
 	}
 
 	if (!eu_socket_bind_unix(socket, unix_path)) {
 		eu_log_err("Failed to bind socket: %s", strerror(errno));
-		return false;
+		eu_socket_destroy(socket);
+		return NULL;
 	}
 
 	eu_socket_listen(socket, 10);
 
 	int fd = eu_socket_get_fd(socket);
-	eu_event_add(fd, POLLIN, handle_incoming_event, handle_incoming_error, socket);
+	eu_event_t *event = eu_event_add(fd, POLLIN, handle_incoming_event, handle_incoming_error, socket);
+	if (event == NULL) {
+		eu_socket_destroy(socket);
+	}
 
-	return true;
+	return event;
 }
 
-static bool remote_connection_init_tcp(uint16_t port)
+static eu_event_t *remote_connection_init_tcp(uint16_t port)
 {
 	eu_socket_t *socket = eu_socket_create_tcp();
 	if (socket == NULL) {
 		eu_log_err("Failed to create socket: %s", strerror(errno));
-		return false;
+		return NULL;
 	}
 
 	if (!eu_socket_bind_tcp(socket, port)) {
 		eu_log_err("Failed to bind socket: %s", strerror(errno));
-		return false;
+		eu_socket_destroy(socket);
+		return NULL;
 	}
 
 	eu_socket_listen(socket, 10);
 
 	int fd = eu_socket_get_fd(socket);
-	eu_event_add(fd, POLLIN, handle_incoming_event, handle_incoming_error, socket);
+	eu_event_t *event = eu_event_add(fd, POLLIN, handle_incoming_event, handle_incoming_error, socket);
+	if (event == NULL) {
+		eu_socket_destroy(socket);
+	}
 
-	return true;
+	return event;
 }
 
-int remote_connection_init()
+static void remote_connection_cleanup_tcp(eu_event_t *event)
 {
-	if (!remote_connection_init_unix("/var/run/domotica-engine.sock")) {
+	if (event) {
+		eu_socket_t *socket = eu_event_get_userdata(event);
+		eu_socket_destroy(socket);
+		eu_event_destroy(event);
+	}
+}
+
+static void remote_connection_cleanup_unix(eu_event_t *event)
+{
+	if (event) {
+		eu_socket_t *socket = eu_event_get_userdata(event);
+		eu_socket_destroy(socket);
+		eu_event_destroy(event);
+	}
+}
+
+void remote_connection_cleanup(void)
+{
+	remote_connection_cleanup_tcp(event_tcp);
+	remote_connection_cleanup_unix(event_unix);
+
+	event_tcp = NULL;
+	event_unix = NULL;
+}
+
+bool remote_connection_init(void)
+{
+	event_unix = remote_connection_init_unix("/var/run/domotica-engine.sock");
+	event_tcp = remote_connection_init_tcp(17922);
+
+	if (event_unix == NULL || event_tcp == NULL) {
+		remote_connection_cleanup();
 		return false;
 	}
-	if (!remote_connection_init_tcp(17922)) {
-		return false;
-	}
+
+	return true;
 }
