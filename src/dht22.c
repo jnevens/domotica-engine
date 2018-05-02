@@ -18,7 +18,6 @@
 
 #include <eu/log.h>
 #include <eu/event.h>
-#include <eu/timer.h>
 
 #include "utils_sched.h"
 #include "utils_time.h"

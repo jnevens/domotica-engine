@@ -12,7 +12,7 @@
 
 #include <eu/log.h>
 #include <eu/list.h>
-#include <eu/timer.h>
+#include <eu/event.h>
 
 #include "device.h"
 #include "event.h"

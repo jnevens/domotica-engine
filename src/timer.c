@@ -9,7 +9,7 @@
 
 #include <eu/log.h>
 #include <eu/event.h>
-#include <eu/timer.h>
+#include <eu/event.h>
 
 #include "timer.h"
 #include "device.h"
