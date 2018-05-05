@@ -13,7 +13,7 @@
 
 #include <eu/log.h>
 #include <eu/event.h>
-#include <eu/event.h>
+#include <eu/list.h>
 
 #include "utils_sunriset.h"
 #include "device.h"
@@ -298,6 +298,16 @@ static bool sunrised_device_state(device_t *device, eu_variant_map_t *varmap)
 	return true;
 }
 
+static void sunrised_cleanup(device_t *device)
+{
+	sunriset_t *sr = device_get_userdata(device);
+	eu_event_timer_destroy(sr->midnight);
+	for (int i = 0; i < SUNRISET_EVENT_COUNT; i++) {
+		eu_event_timer_destroy(sr->sunriset_timers[i]);
+	}
+	free(sr);
+}
+
 static device_type_info_t sunriset_info = {
 	.name = "SUNRISET",
 	.events =	EVENT_SUNRISE | EVENT_SUNSET |
@@ -310,6 +320,7 @@ static device_type_info_t sunriset_info = {
 	.parse_cb = sunriset_parser,
 	.exec_cb = NULL,
 	.state_cb = sunrised_device_state,
+	.cleanup_cb = sunrised_cleanup,
 };
 
 bool sunriset_technology_init(void)
