@@ -49,7 +49,7 @@ event_type_e event_get_type(event_t *event);
 bool event_equal(event_t *event1, event_t *event2);
 
 event_t *event_create(device_t *device, event_type_e event);
-void event_delete(event_t *event); // event_destroy exist in bus/event.h
+void event_destroy(event_t *event); // event_destroy exist in bus/event.h
 
 event_type_e event_type_from_char(const char *name);
 

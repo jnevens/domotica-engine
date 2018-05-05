@@ -44,7 +44,7 @@ void rule_destroy(rule_t *rule)
 bool rule_add_event(rule_t *rule, event_t *event)
 {
 	if (rule->event)
-		event_delete(rule->event);
+		event_destroy(rule->event);
 
 	rule->event = event;
 

@@ -106,7 +106,7 @@ void device_trigger_event(device_t *device, event_type_e event_type)
 	event_t *event = event_create(device, event_type);
 	eu_log_info("Event: device: %s, event: %s", device_get_name(device), event_get_name(event));
 	engine_trigger_event(event);
-	event_delete(event);
+	event_destroy(event);
 }
 
 bool device_check(device_t *device, condition_t *condition)

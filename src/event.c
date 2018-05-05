@@ -37,7 +37,7 @@ event_t *event_create(device_t *device, event_type_e event_type)
 	return event;
 }
 
-void event_delete(event_t *event)
+void event_destroy(event_t *event)
 {
 	free(event);
 }
