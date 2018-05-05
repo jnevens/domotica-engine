@@ -21,6 +21,7 @@
 
 typedef struct {
 	technology_init_fn_t init_fn;
+	technology_cleanup_fn_t cleanup_fn;
 	char *name;
 	bool exit_on_fail;
 } technology_t;
@@ -64,16 +65,14 @@ static technology_t technologies[] = {
 				.init_fn = bool_technology_init,
 				.name = "Booleans",
 				.exit_on_fail = true,
-		},
-		{}
+		}
 };
 
 bool technologies_init(void)
 {
 	bool fail = false;
-	int i = 0;
 
-	while(technologies[i].init_fn) {
+	for(int i = 0; i < (sizeof(technologies) / sizeof(technology_t)); i++) {
 		bool ret = technologies[i].init_fn();
 		if (ret == true) {
 			eu_log_info("Successfully initialize technology '%s'!", technologies[i].name);
@@ -86,7 +85,15 @@ bool technologies_init(void)
 				eu_log_err("Failed to initialize technology '%s'!", technologies[i].name);
 			}
 		}
-		i++;
 	}
 	return !fail;
+}
+
+void technologies_cleanup(void)
+{
+	for(int i = 0; i < (sizeof(technologies) / sizeof(technology_t)); i++) {
+		if (technologies[i].cleanup_fn) {
+			technologies[i].cleanup_fn();
+		}
+	}
 }

@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
 	rv = 0;
 stop:
 	remote_connection_cleanup();
+	technologies_cleanup();
 	eu_event_loop_cleanup();
 
 	return rv;
