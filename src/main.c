@@ -119,6 +119,8 @@ int main(int argc, char *argv[])
 stop:
 	remote_connection_cleanup();
 	technologies_cleanup();
+	rule_list_destroy();
+	device_list_destroy();
 	eu_event_loop_cleanup();
 
 	return rv;
