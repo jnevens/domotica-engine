@@ -84,6 +84,12 @@ static bool bool_check(device_t *device, condition_t *condition)
 	return false;
 }
 
+static void bool_cleanup(device_t *device)
+{
+	bool_t *b = device_get_userdata(device);
+	free(b);
+}
+
 static device_type_info_t bool_info = {
 	.name = "BOOL",
 	.events = EVENT_SET | EVENT_UNSET,
@@ -92,6 +98,7 @@ static device_type_info_t bool_info = {
 	.check_cb = bool_check,
 	.parse_cb = bool_parser,
 	.exec_cb = bool_exec,
+	.cleanup_cb = bool_cleanup,
 };
 
 bool bool_technology_init(void)
