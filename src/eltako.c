@@ -80,17 +80,23 @@ void handle_connection_disconnect(void *arg)
 static bool eltako_connect_with_eltakod(void)
 {
 	vsb_client = vsb_client_init("/var/run/eltako.socket", "domotica-engine");
+	if (vsb_client == NULL) {
+		eu_log_err("Failed connection to eltakod! Cannot open /var/run/eltako.socket");
+		return false;
+	}
 	int eltako_fd = vsb_client_get_fd(vsb_client);
 	vsb_client_register_incoming_data_cb(vsb_client, incoming_data, NULL);
 	eu_event_add(eltako_fd, POLLIN, handle_incoming_event, NULL, vsb_client);
 	vsb_client_register_disconnect_cb(vsb_client, handle_connection_disconnect, NULL);
 
 	eu_log_info("Eltako registered (fd = %d)", eltako_fd);
+
+	return true;
 }
 
 bool eltako_technology_init(void)
 {
-	if(eltako_connect_with_eltakod()) {
+	if(!eltako_connect_with_eltakod()) {
 		eu_log_err("Failed to connect to eltakod!");
 		return false;
 	}
