@@ -23,6 +23,7 @@ typedef struct {
 	device_exec_fn_t exec_cb;
 	device_check_fn_t check_cb;
 	device_state_fn_t state_cb;
+	device_cleanup_fn_t cleanup_cb;
 	action_type_e actions;
 	event_type_e events;
 	condition_type_e conditions;
@@ -68,6 +69,9 @@ finish:
 
 void device_destroy(device_t *device)
 {
+	device_type_t *device_type = device->device_type;
+	if (device_type->cleanup_cb)
+		device_type->cleanup_cb(device);
 	free(device->name);
 	free(device);
 
@@ -174,6 +178,7 @@ bool device_type_register(device_type_info_t *device_type_info)
 	type->exec_cb = device_type_info->exec_cb;
 	type->check_cb = device_type_info->check_cb;
 	type->state_cb = device_type_info->state_cb;
+	type->cleanup_cb = device_type_info->cleanup_cb;
 
 	eu_log_info("Register device type: %s", device_type_info->name);
 

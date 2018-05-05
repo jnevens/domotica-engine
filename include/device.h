@@ -25,6 +25,7 @@ typedef bool (*device_parse_fn_t)(device_t *device, char *options[]);
 typedef bool (*device_exec_fn_t)(device_t *device, action_t *action);
 typedef bool (*device_check_fn_t)(device_t *device, condition_t *condition);
 typedef bool (*device_state_fn_t)(device_t *device, eu_variant_map_t *state);
+typedef void (*device_cleanup_fn_t)(device_t *device);
 
 typedef struct {
 	char *name;
@@ -35,6 +36,7 @@ typedef struct {
 	device_exec_fn_t exec_cb;
 	device_check_fn_t check_cb;
 	device_state_fn_t state_cb;
+	device_cleanup_fn_t cleanup_cb;
 } device_type_info_t;
 
 device_t *device_create(char *name, const char *devtype, char *options[]);
