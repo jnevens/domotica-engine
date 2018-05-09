@@ -76,6 +76,8 @@ line_t *line_parse(char *strline)
 	}
 	for(i = 0; i < len; i++) {
 		if (ln[i] == '\0') {
+			if (ln[i + 1] == '\0')
+				continue;
 			if (n == 0) {
 				line->name = strdup(&ln[i + 1]);
 			} else if (n > 0) {
