@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <eu/log.h>
+
 #include "line_parser.h"
 
 #define X(a, b, c) b,
@@ -69,7 +71,7 @@ line_t *line_parse(char *strline)
 
 	size_t len = strlen(ln);
 	for(i = 0; i < len; i++) {
-		if(ln[i] == ' ' || ln[i] == '\t')
+		if(ln[i] == ' ' || ln[i] == '\t' || ln[i] == '\n')
 			ln[i] = '\0';
 	}
 	for(i = 0; i < len; i++) {
