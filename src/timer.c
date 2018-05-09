@@ -66,6 +66,14 @@ static bool timer_device_exec(device_t *device, action_t *action)
 	return false;
 }
 
+static void timer_device_cleanup(device_t *device)
+{
+	tmr_t *tmr = device_get_userdata(device);
+	if (tmr->timer)
+		eu_event_timer_destroy(tmr->timer);
+	free(tmr);
+}
+
 static device_type_info_t timer_info = {
 	.name = "TIMER",
 	.events = EVENT_TIMEOUT,
@@ -74,6 +82,7 @@ static device_type_info_t timer_info = {
 	.check_cb = NULL,
 	.parse_cb = timer_device_parser,
 	.exec_cb = timer_device_exec,
+	.cleanup_cb = timer_device_cleanup,
 };
 
 bool timer_technology_init(void)
