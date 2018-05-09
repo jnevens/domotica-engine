@@ -194,6 +194,20 @@ static bool gpio_output_state(device_t *device, eu_variant_map_t *state)
 	return true;
 }
 
+static void gpio_input_cleanup(device_t *device)
+{
+	gpio_t *gpio = device_get_userdata(device);
+	eu_event_timer_destroy(gpio->timer);
+	free(gpio);
+}
+
+static void gpio_output_cleanup(device_t *device)
+{
+	gpio_t *gpio = device_get_userdata(device);
+	eu_event_timer_destroy(gpio->timer);
+	free(gpio);
+}
+
 static device_type_info_t gpi_info = {
 	.name = "GPI",
 	.events = EVENT_PRESS | EVENT_RELEASE | EVENT_SHORT_PRESS | EVENT_LONG_PRESS | EVENT_DIM,
@@ -202,6 +216,7 @@ static device_type_info_t gpi_info = {
 	.check_cb = NULL,
 	.parse_cb = gpio_input_parser,
 	.exec_cb = gpio_input_exec,
+	.cleanup_cb = gpio_input_cleanup,
 };
 
 static device_type_info_t gpo_info = {
@@ -213,6 +228,7 @@ static device_type_info_t gpo_info = {
 	.parse_cb = gpio_output_parser,
 	.exec_cb = gpio_output_exec,
 	.state_cb = gpio_output_state,
+	.cleanup_cb = gpio_output_cleanup,
 };
 
 bool gpio_technology_init(void)
