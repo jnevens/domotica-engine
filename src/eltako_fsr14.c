@@ -91,6 +91,12 @@ static bool fsr14_device_state(device_t *device, eu_variant_map_t *varmap)
 	return true;
 }
 
+static void fsr14_device_cleanup(device_t *device)
+{
+	device_fsr14_t *fsr14 = device_get_userdata(device);
+	free(fsr14);
+}
+
 static device_type_info_t fsr14_info = {
 	.name = "FSR14",
 	.events = 0,
@@ -100,6 +106,7 @@ static device_type_info_t fsr14_info = {
 	.parse_cb = fsr14_device_parser,
 	.exec_cb = fsr14_device_exec,
 	.state_cb = fsr14_device_state,
+	.cleanup_cb = fsr14_device_cleanup,
 };
 
 bool eltako_fsr14_init(void)
