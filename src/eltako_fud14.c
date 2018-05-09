@@ -123,6 +123,13 @@ static bool fud14_device_state(device_t *device, eu_variant_map_t *state)
 	return true;
 }
 
+static void fud14_device_cleanup(device_t *device)
+{
+	device_fud14_t *fud14 = device_get_userdata(device);
+	free(fud14);
+}
+
+
 static device_type_info_t fud14_info = {
 	.name = "FUD14",
 	.events = 0,
@@ -132,6 +139,7 @@ static device_type_info_t fud14_info = {
 	.parse_cb = fud14_device_parser,
 	.exec_cb = fud14_device_exec,
 	.state_cb = fud14_device_state,
+	.cleanup_cb = fud14_device_cleanup,
 };
 
 bool eltako_fud14_init(void)
