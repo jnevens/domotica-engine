@@ -310,6 +310,13 @@ static bool dht22_device_state(device_t *device, eu_variant_map_t *state)
 	return true;
 }
 
+static void dht22_device_cleanup(device_t *device)
+{
+	dht22_t *dht22 = device_get_userdata(device);
+	eu_event_timer_destroy(dht22->timer);
+	free(dht22);
+}
+
 static device_type_info_t dht22_info = {
 	.name = "DHT22",
 	.events = EVENT_TEMPERATURE | EVENT_HUMIDITY,
@@ -319,6 +326,7 @@ static device_type_info_t dht22_info = {
 	.parse_cb = dht22_parser,
 	.exec_cb = NULL,
 	.state_cb = dht22_device_state,
+	.cleanup_cb = dht22_device_cleanup,
 };
 
 bool dht22_technology_init()
