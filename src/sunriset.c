@@ -112,12 +112,14 @@ static void sunriset_create_event_timer(device_t *device, sunriset_event_e se, i
 
 	eu_log_debug("Schedule event: %d @%02d:%02dh UTC in %ds", se, hour, min, et - ct);
 
+	if (sr->sunriset_timers[se]) {
+		free(eu_event_timer_get_userdata(sr->sunriset_timers[se]));
+		eu_event_timer_destroy(sr->sunriset_timers[se]);
+		sr->sunriset_timers[se] = NULL;
+	}
+
 	if (et > ct) {
 		eu_log_debug("Event in future: %ds", et - ct);
-		if (sr->sunriset_timers[se]) {
-			free(eu_event_timer_get_userdata(sr->sunriset_timers[se]));
-			eu_event_timer_destroy(sr->sunriset_timers[se]);
-		}
 		sunriset_event_t *sunevent = calloc(1, sizeof(sunriset_event_t));
 		sunevent->device = device;
 		sunevent->se = se;
@@ -298,13 +300,17 @@ static bool sunrised_device_state(device_t *device, eu_variant_map_t *varmap)
 	return true;
 }
 
-static void sunrised_cleanup(device_t *device)
+static void sunrised_device_cleanup(device_t *device)
 {
 	sunriset_t *sr = device_get_userdata(device);
-	eu_event_timer_destroy(sr->midnight);
-	for (int i = 0; i < SUNRISET_EVENT_COUNT; i++) {
-		eu_event_timer_destroy(sr->sunriset_timers[i]);
+	for (int se = 0; se < SUNRISET_EVENT_COUNT; se++) {
+		eu_event_timer_t *event = sr->sunriset_timers[se];
+		if (event) {
+			free(eu_event_timer_get_userdata(event));
+			eu_event_timer_destroy(event);
+		}
 	}
+	eu_event_timer_destroy(sr->midnight);
 	free(sr);
 }
 
@@ -320,7 +326,7 @@ static device_type_info_t sunriset_info = {
 	.parse_cb = sunriset_parser,
 	.exec_cb = NULL,
 	.state_cb = sunrised_device_state,
-	.cleanup_cb = sunrised_cleanup,
+	.cleanup_cb = sunrised_device_cleanup,
 };
 
 bool sunriset_technology_init(void)
