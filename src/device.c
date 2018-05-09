@@ -37,27 +37,30 @@ struct device_s {
 
 static eu_list_t *device_types = NULL;
 
+static device_type_t *device_type_lookup(const char *dev_type_name);
+
 device_t *device_create(char *name, const char *devtype, char *options[])
 {
-	device_t *device = calloc(1, sizeof(device_t));
-	device->name = strdup(name);
 
 	// lookup device type
+	device_type_t *device_type = device_type_lookup(devtype);
+	if (!device_type) {
+		return NULL;
+	}
+
+	device_t *device = calloc(1, sizeof(device_t));
+	if (!device) {
+		return NULL;
+	}
+
+	device->name = strdup(name);
 	if (device && device->name) {
 		if (options[0] != NULL) {
-			eu_list_node_t *node;
-			eu_list_for_each(node, device_types)
-			{
-				device_type_t *device_type = eu_list_node_data(node);
-				if (strcmp(device_type->name, devtype) == 0) {
-					if (device_type->parse_cb(device, options)) {
-						device->device_type = device_type;
-						goto finish;
-					}
-					eu_log_err("Failed to parse device: %s", name);
-					break;
-				}
+			if (device_type->parse_cb(device, options)) {
+				device->device_type = device_type;
+				goto finish;
 			}
+			eu_log_err("Failed to parse device: %s", name);
 		}
 	}
 
@@ -69,12 +72,13 @@ finish:
 
 void device_destroy(device_t *device)
 {
-	device_type_t *device_type = device->device_type;
-	if (device_type->cleanup_cb)
-		device_type->cleanup_cb(device);
-	free(device->name);
-	free(device);
-
+	if (device) {
+		device_type_t *device_type = device->device_type;
+		if (device_type && device_type->cleanup_cb)
+			device_type->cleanup_cb(device);
+		free(device->name);
+		free(device);
+	}
 }
 
 void device_set_userdata(device_t *device, void *userdata)
@@ -161,6 +165,25 @@ eu_variant_map_t *device_state(device_t *device)
 	}
 
 	return state;
+}
+
+
+static device_type_t *device_type_lookup(const char *dev_type_name)
+{
+	eu_list_node_t *node;
+	eu_list_for_each(node, device_types)
+	{
+		device_type_t *device_type = eu_list_node_data(node);
+		if (strcmp(device_type->name, dev_type_name) == 0) {
+			return device_type;
+		}
+	}
+	return NULL;
+}
+
+bool device_type_exists(const char *dev_type_name)
+{
+	return (device_type_lookup(dev_type_name) != NULL) ? true : false;
 }
 
 bool device_type_register(device_type_info_t *device_type_info)

@@ -51,6 +51,7 @@ bool device_check(device_t *device, condition_t *condition);
 eu_variant_map_t *device_state(device_t *device);
 
 bool device_type_register(device_type_info_t *device_type_info);
+bool device_type_exists(const char *dev_type_name);
 
 const char *device_get_name(device_t *device);
 const char *device_get_type(device_t *device);

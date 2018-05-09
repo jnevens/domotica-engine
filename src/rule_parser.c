@@ -84,6 +84,10 @@ int rules_read_file_declarations(const char *file)
 						devtype = "SCHEDULE";
 					if (ln->statement == STATEMENT_BOOL)
 						devtype = "BOOL";
+					if (!device_type_exists(devtype)) {
+						eu_log_fatal("Failed to parse device type: %s, device: %s (%s:%d)", devtype, ln->name, file, line_nr);
+						ret = -1;
+					}
 					device_t *device = device_create(ln->name, devtype, ln->options);
 					if (device) {
 						device_list_add(device);
