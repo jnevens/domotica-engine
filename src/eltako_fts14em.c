@@ -76,6 +76,12 @@ uint32_t eltako_fts14em_get_address(device_t *device)
 	return eltako_device->address;
 }
 
+static void fts14em_device_cleanup(device_t *device)
+{
+	fts14em_device_t *fts14em = device_get_userdata(device);
+	free(fts14em);
+}
+
 static device_type_info_t fts14em_info = {
 	.name = "FTS14EM",
 	.events = EVENT_PRESS | EVENT_RELEASE | EVENT_SHORT_PRESS | EVENT_LONG_PRESS,
@@ -84,6 +90,7 @@ static device_type_info_t fts14em_info = {
 	.check_cb = NULL,
 	.parse_cb = fts14em_device_parser,
 	.exec_cb = fts14em_device_exec,
+	.cleanup_cb = fts14em_device_cleanup,
 };
 
 bool eltako_fts14em_init(void)
