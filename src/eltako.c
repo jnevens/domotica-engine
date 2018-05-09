@@ -32,6 +32,8 @@ bool eltako_send(eltako_message_t *msg)
 	eltako_frame_t *frame = eltako_message_to_frame(msg);
 	eltako_frame_print(frame);
 	vsb_client_send_data(vsb_client, eltako_frame_get_data(frame), eltako_frame_get_raw_size(frame));
+	eltako_message_destroy(msg);
+	eltako_frame_destroy(frame);
 }
 
 static bool device_list_find_cb(device_t *device, void *arg) {
