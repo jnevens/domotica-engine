@@ -158,6 +158,12 @@ static bool fsb14_device_state(device_t *device, eu_variant_map_t *varmap)
 	return true;
 }
 
+static void fsb14_device_cleanup(device_t *device)
+{
+	device_fsb14_t *fsb14 = device_get_userdata(device);
+	free(fsb14);
+}
+
 static device_type_info_t fsb14_info = {
 	.name = "FSB14",
 	.events = 0,
@@ -167,6 +173,7 @@ static device_type_info_t fsb14_info = {
 	.parse_cb = fsb14_device_parser,
 	.exec_cb = fsb14_device_exec,
 	.state_cb = fsb14_device_state,
+	.cleanup_cb = fsb14_device_cleanup,
 };
 
 bool eltako_fsb14_init(void)
