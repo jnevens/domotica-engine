@@ -29,17 +29,28 @@ static void reload_handler(int signum)
 	eu_log_info("Reload config!");
 }
 
-static void segfault_handler(int sig)
+static void segfault_handler(int signum, siginfo_t* info, void*ptr)
 {
-	void *array[10];
-	size_t size;
+	void *array[32];
+	size_t nptrs;
+	char **strs;
+	static const char *si_codes[3] = {"", "SEGV_MAPERR", "SEGV_ACCERR"};
+
+	eu_log_err("Segmentation Fault!");
+	eu_log_err("info.si_signo = %d", signum);
+	eu_log_err("info.si_errno = %d", info->si_errno);
+	eu_log_err("info.si_code  = %d (%s)", info->si_code, si_codes[info->si_code]);
+	eu_log_err("info.si_addr  = %p", info->si_addr);
 
 	// get void*'s for all entries on the stack
-	size = backtrace(array, 10);
+	nptrs = backtrace(array, 32);
 
 	// print out all the frames to stderr
-	fprintf(stderr, "Error: signal %d:\n", sig);
-	backtrace_symbols_fd(array, size, STDERR_FILENO);
+	strs = backtrace_symbols(array, nptrs);
+	eu_log_err("Stack trace :");
+	for (int i = 0; i < nptrs; i++) {
+		eu_log_err("[%d] : %s", i, strs[i]);
+	}
 	exit(1);
 }
 
@@ -60,16 +71,25 @@ static void fix_time(void)
 	eu_log_info("System time set (TZ=%s GMT%s%lds)", lt.tm_zone, (lt.tm_gmtoff >= 0) ? "+" : "", lt.tm_gmtoff);
 }
 
+static void handle_signals(void)
+{
+	static struct sigaction action = {
+		.sa_sigaction = segfault_handler,
+		.sa_flags = SA_SIGINFO,
+	};
+	signal(SIGTERM, termination_handler);
+	signal(SIGINT, termination_handler);
+	signal(SIGUSR1, reload_handler);
+	// signal(SIGSEGV, segfault_handler);
+	signal(SIGPIPE, SIG_IGN);
+	sigaction(SIGSEGV, &action, NULL);
+}
+
 int main(int argc, char *argv[])
 {
 	int rv = -1;
 	// handle signals
-	signal(SIGTERM, termination_handler);
-	signal(SIGINT, termination_handler);
-	signal(SIGUSR1, reload_handler);
-	signal(SIGSEGV, segfault_handler);
-	signal(SIGPIPE, SIG_IGN);
-
+	handle_signals();
 	// init event loop
 	eu_event_loop_init();
 	// init logging
@@ -109,7 +129,6 @@ int main(int argc, char *argv[])
 	}
 
 	// initialize Domotica engine
-
 	eu_log_info("Domotica engine started...");
 
 	// run baby, run!
