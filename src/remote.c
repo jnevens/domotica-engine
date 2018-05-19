@@ -149,8 +149,6 @@ static void handle_incoming_conn_event(int fd, short int revents, void *arg)
 			response = strdup("NOK");
 		}
 
-		eu_log_info("Received cmd: %s (response:%s)", buf, response);
-
 		if (response) {
 			if (eu_socket_write(conn_sock, response, strlen(response) + 1) <=0 ) {
 				eu_log_err("send response [%d]: '%s' ERR %d:%s", strlen(response) + 1, response, errno, strerror(errno));
