@@ -100,7 +100,7 @@ const char *action_type_to_char(action_type_e type)
 
 bool action_execute(action_t *action, event_t *event)
 {
-	device_set(action->device, action);
+	device_set(action->device, action, event);
 	return true;
 }
 

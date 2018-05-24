@@ -59,7 +59,7 @@ static bool fsb14_timer_callback(void *arg)
 	return false;
 }
 
-static bool fsb14_device_exec(device_t *device, action_t *action)
+static bool fsb14_device_exec(device_t *device, action_t *action, event_t *event)
 {
 	device_fsb14_t *fsb14 = device_get_userdata(device);
 	eltako_message_t *msg = NULL;

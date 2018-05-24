@@ -140,7 +140,7 @@ static bool gpio_input_parser(device_t *device, char *options[])
 	return false;
 }
 
-static bool gpio_input_exec(device_t *device, action_t *action)
+static bool gpio_input_exec(device_t *device, action_t *action, event_t *event)
 {
 	return false;
 }
@@ -161,7 +161,7 @@ static bool gpio_output_parser(device_t *device, char *options[])
 	return false;
 }
 
-static bool gpio_output_exec(device_t *device, action_t *action)
+static bool gpio_output_exec(device_t *device, action_t *action, event_t *event)
 {
 	gpio_t *output_gpio = device_get_userdata(device);
 	action_print(action);

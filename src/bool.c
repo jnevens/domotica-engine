@@ -43,7 +43,7 @@ static bool bool_parser(device_t *device, char *options[])
 	return false;
 }
 
-static bool bool_exec(device_t *device, action_t *action)
+static bool bool_exec(device_t *device, action_t *action, event_t *event)
 {
 	bool_t *b = device_get_userdata(device);
 	int32_t val_priv = b->val;

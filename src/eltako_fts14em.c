@@ -65,7 +65,7 @@ void eltako_fts14em_incoming_data(eltako_message_t *msg, device_t *device)
 	}
 }
 
-static bool fts14em_device_exec(device_t *device, action_t *action)
+static bool fts14em_device_exec(device_t *device, action_t *action, event_t *event)
 {
 	return false;
 }

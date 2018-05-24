@@ -22,7 +22,7 @@
 #define PRESS_DIM_INTERVAL_TIME_MS	200
 
 typedef bool (*device_parse_fn_t)(device_t *device, char *options[]);
-typedef bool (*device_exec_fn_t)(device_t *device, action_t *action);
+typedef bool (*device_exec_fn_t)(device_t *device, action_t *action, event_t *event);
 typedef bool (*device_check_fn_t)(device_t *device, condition_t *condition);
 typedef bool (*device_state_fn_t)(device_t *device, eu_variant_map_t *state);
 typedef void (*device_cleanup_fn_t)(device_t *device);
@@ -45,7 +45,7 @@ void device_destroy(device_t *device);
 void device_set_userdata(device_t *device, void *userdata);
 void *device_get_userdata(device_t *device);
 
-bool device_set(device_t *device, action_t *action);
+bool device_set(device_t *device, action_t *action, event_t *event);
 void device_trigger_event(device_t *device, event_type_e event);
 bool device_check(device_t *device, condition_t *condition);
 eu_variant_map_t *device_state(device_t *device);

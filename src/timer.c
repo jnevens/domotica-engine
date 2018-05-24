@@ -44,7 +44,7 @@ static bool tmr_timeout(void *arg)
 	return false;
 }
 
-static bool timer_device_exec(device_t *device, action_t *action)
+static bool timer_device_exec(device_t *device, action_t *action, event_t *event)
 {
 	tmr_t *tmr = device_get_userdata(device);
 	switch (action_get_type(action)) {

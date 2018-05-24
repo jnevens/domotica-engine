@@ -253,7 +253,7 @@ static bool schedule_parser(device_t *device, char *options[])
 	return false;
 }
 
-static bool schedule_exec(device_t *device, action_t *action)
+static bool schedule_exec(device_t *device, action_t *action, event_t *event)
 {
 	return false;
 }

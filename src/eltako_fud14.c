@@ -45,7 +45,7 @@ static bool fud14_device_parser(device_t *device, char *options[])
 	return false;
 }
 
-static bool fud14_device_exec(device_t *device, action_t *action)
+static bool fud14_device_exec(device_t *device, action_t *action, event_t *event)
 {
 	device_fud14_t *fud14 = device_get_userdata(device);
 	eltako_message_t *msg = NULL;

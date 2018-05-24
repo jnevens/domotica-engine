@@ -9,6 +9,9 @@
 #define EVENT_H_
 
 #include <stdbool.h>
+
+#include <eu/variant.h>
+
 #include "types.h"
 
 #define EVENT_TYPE_TABLE \
@@ -51,6 +54,14 @@ bool event_equal(event_t *event1, event_t *event2);
 
 event_t *event_create(device_t *device, event_type_e event);
 void event_destroy(event_t *event); // event_destroy exist in bus/event.h
+
+void event_option_set(event_t *event, const char *name, eu_variant_t *var);
+void event_option_set_int32(event_t *event, const char *name, int val);
+void event_option_set_double(event_t *event, const char *name, double val);
+
+eu_variant_t *event_option_get(event_t *event, const char *name);
+int event_option_get_int32(event_t *event, const char *name);
+double event_option_get_double(event_t *event, const char *name);
 
 event_type_e event_type_from_char(const char *name);
 

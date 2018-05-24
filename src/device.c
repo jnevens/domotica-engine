@@ -91,7 +91,7 @@ void *device_get_userdata(device_t *device)
 	return device->userdata;
 }
 
-bool device_set(device_t *device, action_t *action)
+bool device_set(device_t *device, action_t *action, event_t *event)
 {
 	eu_list_node_t *node;
 
@@ -99,7 +99,7 @@ bool device_set(device_t *device, action_t *action)
 		device_type_t *device_type = eu_list_node_data(node);
 		if (device_type == device->device_type) {
 			if (action_get_type(action) & device_type->actions) {
-				device_type->exec_cb(device, action);
+				device_type->exec_cb(device, action, event);
 			} else {
 				eu_log_err("Action type: %s not supported for device: %s",
 						action_type_to_char(action_get_type(action)), device_get_name(device));

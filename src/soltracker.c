@@ -19,6 +19,7 @@
 
 #include "device.h"
 #include "device_list.h"
+#include "engine.h"
 #include "utils_time.h"
 
 #include "soltracker.h"
@@ -93,6 +94,8 @@ static void soltracker_check_tracker(soltracker_t *st)
 	st->altitude = alt;
 
 	event_t *event = event_create(device, EVENT_SUN_POSITION);
+	event_option_set_double(event, "azimuth", azi);
+	event_option_set_double(event, "altitude", alt);
 	engine_trigger_event(event);
 	event_destroy(event);
 }
@@ -138,8 +141,15 @@ static bool soltracker_parser(device_t *device, char *options[])
 
 	soltracker_t *st = calloc(1, sizeof(soltracker_t));
 	if (st) {
+		double azi = 0.0;
+		double alt = 0.0;
+
+		soltracker_calculate_position(lon, lat, &azi, &alt);
+
 		st->lon = lon;
 		st->lat = lat;
+		st->azimuth = azi;
+		st->altitude = alt;
 
 		eu_list_append(soltracker_list, st);
 		st->device = device;
