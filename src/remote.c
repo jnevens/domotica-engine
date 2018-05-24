@@ -133,6 +133,8 @@ static void handle_incoming_conn_event(int fd, short int revents, void *arg)
 						sprintf(tmp, "\t\"%s\" : \"%s\"", key, eu_variant_da_char(var));
 					}else if (eu_variant_type(var) == EU_VARIANT_TYPE_FLOAT) {
 						sprintf(tmp, "\t\"%s\" : \"%f\"", key, eu_variant_float(var));
+					}else if (eu_variant_type(var) == EU_VARIANT_TYPE_DOUBLE) {
+						sprintf(tmp, "\t\"%s\" : \"%lf\"", key, eu_variant_double(var));
 					}
 
 					strappend(&response, tmp);
