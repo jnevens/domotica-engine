@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <time.h>
+
 
 #include <eu/log.h>
 #include <eu/list.h>
@@ -24,11 +26,13 @@
 typedef struct {
 	double lat;
 	double lon;
-	double orientation;
-	eu_event_timer_t *midnight;
+	double azimuth;
+	double altitude;
+	device_t *device;
 } soltracker_t;
 
 static eu_list_t *soltracker_list = NULL;
+static eu_event_timer_t *soltrack_timer = NULL;
 
 static double orientation_norm(double orientation)
 {
@@ -46,24 +50,51 @@ static double orientation_norm(double orientation)
 	return orientation;
 }
 
-static void soltracker_check_tracker(soltracker_t *st)
+static void soltracker_calculate_position(double lon, double lat, double *azi, double *alt)
 {
+	time_t t = time(NULL);
+	struct tm *ts = gmtime(&t);
 	struct Position pos;
-	struct Time time = { .year = 2018, .month = 4, .day = 19, .hour = 14, .minute = 0, .second = 0, };
-	struct Location loc;
-
-	loc.longitude = st->lon / R2D;
-	loc.latitude = st->lat / R2D;
-	loc.pressure = 101.0;
-	loc.temperature = 283.0;
+	struct Time time = {
+			.year = ts->tm_year + 1900,
+			.month = ts->tm_mon + 1,
+			.day = ts->tm_mday,
+			.hour = ts->tm_hour,
+			.minute = ts->tm_min,
+			.second = ts->tm_sec,
+		};
+	struct Location loc = {
+			.longitude = lon / R2D,
+			.latitude = lat / R2D,
+			.pressure = 101.0,
+			.temperature = 283.0,
+		};
 
 	SolTrack(time, loc, &pos, 0, 1, 0, 0);
 
-	eu_log_debug("Soltracker: %04d-%02d-%02d %02d:%02d:%02d %10.6lf %10.6lf\n",
+	eu_log_debug("Soltracker: %04d-%02d-%02d %02d:%02d:%02d %10.6lf %10.6lf",
 			time.year, time.month, time.day,
 			(int) time.hour + 2, (int) time.minute, (int) time.second,
 			pos.azimuthRefract * R2D, pos.altitudeRefract * R2D);
 
+	*azi = pos.azimuthRefract * R2D;
+	*alt = pos.altitudeRefract * R2D;
+}
+
+static void soltracker_check_tracker(soltracker_t *st)
+{
+	device_t *device = st->device;
+	double azi = 0.0;
+	double alt = 0.0;
+
+	soltracker_calculate_position(st->lon, st->lat, &azi, &alt);
+
+	st->azimuth = azi;
+	st->altitude = alt;
+
+	event_t *event = event_create(device, EVENT_SUN_POSITION);
+	engine_trigger_event(event);
+	event_destroy(event);
 }
 
 static void soltracker_check_all_trackers(void)
@@ -74,25 +105,13 @@ static void soltracker_check_all_trackers(void)
 	}
 }
 
-static bool soltracker_calculate_next_timing_event(void *arg)
-{
-	uint64_t until_next = (1000 * 60) - (get_current_time_ms() % (1000 * 60) + (30 * 1000));
-	// eu_log_debug("schedule event in %d!", until_next);
-	eu_event_timer_create(until_next, soltracker_calculate_next_timing_event, (void *)0xdeadbeef);
-
-	if (arg != NULL) {
-		soltracker_check_all_trackers();
-	}
-	return false;
-}
-
 static bool soltracker_parser(device_t *device, char *options[])
 {
 	eu_log_info("Parse soltracker %s", device_get_name(device));
 
-	double temp, lat, lon, orientation;
+	double temp, lat, lon;
 	int hemisphere;
-	eu_log_debug("lat: %s, lon: %s, orientation: %s", options[0], options[1], options[2]);
+	eu_log_debug("lat: %s, lon: %s", options[0], options[1]);
 
 	if (2 == sscanf(options[0], "%lf%1[Nn]", &temp, &hemisphere)) {
 		lat = temp;
@@ -114,21 +133,16 @@ static bool soltracker_parser(device_t *device, char *options[])
 		eu_log_err("Cannot parse longitude!");
 		return false;
 	}
-	if (1 == sscanf(options[1], "%lf", &orientation)) {
-		eu_log_err("Cannot parse orientation!");
-		return false;
-	}
-	orientation = orientation_norm(orientation);
 
-	eu_log_info("Suntracker: lat: %f lon: %f, orientation: %f", lat, lon, orientation);
+	eu_log_info("Suntracker: lat: %f lon: %f", lat, lon);
 
 	soltracker_t *st = calloc(1, sizeof(soltracker_t));
 	if (st) {
 		st->lon = lon;
 		st->lat = lat;
-		st->orientation = orientation;
 
 		eu_list_append(soltracker_list, st);
+		st->device = device;
 		device_set_userdata(device, st);
 		return true;
 	}
@@ -154,13 +168,21 @@ static bool soltracker_state(device_t *device, eu_variant_map_t *varmap)
 
 	eu_variant_map_set_double(varmap, "latitude", st->lat);
 	eu_variant_map_set_double(varmap, "longitude", st->lon);
-	eu_variant_map_set_double(varmap, "orientation", st->orientation);
+	eu_variant_map_set_double(varmap, "azimuth", st->azimuth);
+	eu_variant_map_set_double(varmap, "altitude", st->altitude);
 
 	return true;
 }
 
+static bool soltrack_timer_cb(void *arg)
+{
+	soltracker_check_all_trackers();
+
+	return eu_event_timer_continue;
+}
+
 static device_type_info_t soltracker_info = {
-	.name = "SUNTRACKER",
+	.name = "SOLTRACKER",
 	.events = 0,
 	.actions = 0,
 	.conditions = 0,
@@ -176,8 +198,13 @@ bool soltracker_technology_init(void)
 
 	device_type_register(&soltracker_info);
 
-	soltracker_calculate_next_timing_event(NULL);
+	soltrack_timer = eu_event_timer_create(60 * 1000, soltrack_timer_cb, NULL);
 
 	eu_log_info("Succesfully initialized: soltracker!");
 	return true;
+}
+
+void soltracker_technology_cleanup(void)
+{
+	eu_event_timer_destroy(soltrack_timer);
 }

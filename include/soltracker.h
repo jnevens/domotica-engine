@@ -11,5 +11,6 @@
 #include <stdbool.h>
 
 bool soltracker_technology_init(void);
+void soltracker_technology_cleanup(void);
 
 #endif /* SOLTRACKER_H_ */

@@ -39,9 +39,10 @@ static technology_t technologies[] = {
 				.exit_on_fail = false,
 		},
 #endif
-#ifdef ENABLE_MOD_SOLTRACKER
+#ifdef ENABLE_MOD_SOLTRACK
 		{
 				.init_fn = soltracker_technology_init,
+				.cleanup_fn = soltracker_technology_cleanup,
 				.name = "Soltracker",
 				.exit_on_fail = true,
 		},
