@@ -47,6 +47,11 @@ domotica_engine_LDADD += -lSolTrack
 domotica_engine_SOURCES += \
 	soltracker.c
 endif
+if HAVE_MOD_MUSICCAST
+domotica_engine_LDADD += -lcurl
+domotica_engine_SOURCES += \
+	musiccast.c
+endif
 
 domctl_LDADD = -leu
 domctl_CFLAGS =

@@ -18,6 +18,7 @@
 #include "sunriset.h"
 #include "dht22.h"
 #include "bool.h"
+#include "musiccast.h"
 
 typedef struct {
 	technology_init_fn_t init_fn;
@@ -44,6 +45,14 @@ static technology_t technologies[] = {
 				.init_fn = soltracker_technology_init,
 				.cleanup_fn = soltracker_technology_cleanup,
 				.name = "Soltracker",
+				.exit_on_fail = true,
+		},
+#endif
+#ifdef ENABLE_MOD_MUSICCAST
+		{
+				.init_fn = musiccast_technology_init,
+				.cleanup_fn = musiccast_technology_cleanup,
+				.name = "Yamaha MusicCast",
 				.exit_on_fail = true,
 		},
 #endif

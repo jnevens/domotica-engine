@@ -96,4 +96,15 @@ if test "x$use_mod_eltako" = "xyes"; then
 	AC_HAVE_LIBRARY(vsb, , AC_MSG_ERROR([libvsb is required for --enable-mod-eltako]))
 fi
 
+AC_ARG_ENABLE(mod_musiccast,
+AS_HELP_STRING([--enable-mod-musiccast],
+               [Enable MusicCast module (Yamaha) (needs libCurl)]),
+[use_mod_musiccast=yes], [use_mod_musiccast=no])
+AM_CONDITIONAL([HAVE_MOD_MUSICCAST], test "x$use_mod_musiccast" = "xyes")
+
+if test "x$use_mod_musiccast" = "xyes"; then
+	AC_DEFINE(ENABLE_MOD_MUSICCAST, 1, "Enable module MusicCast")
+	AC_HAVE_LIBRARY(curl, , AC_MSG_ERROR([libcurl is required for --enable-mod-musiccast]))
+fi
+
 AC_OUTPUT
