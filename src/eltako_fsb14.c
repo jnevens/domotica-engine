@@ -26,6 +26,7 @@ typedef struct {
 	eu_event_timer_t *timer;
 	condition_type_e condition;
 	action_type_e last_action;
+	bool locked;
 } device_fsb14_t;
 
 static bool fsb14_device_parser(device_t *device, char *options[])
@@ -61,6 +62,7 @@ static bool fsb14_timer_callback(void *arg)
 
 static bool fsb14_device_exec(device_t *device, action_t *action, event_t *event)
 {
+	bool rv = true;
 	device_fsb14_t *fsb14 = device_get_userdata(device);
 	eltako_message_t *msg = NULL;
 	uint8_t data[4] = { 0x08, 0x01, fsb14->duration, 0x00 };
@@ -94,6 +96,16 @@ static bool fsb14_device_exec(device_t *device, action_t *action, event_t *event
 		data[1] = 0x00; // stop
 		break;
 	}
+	case ACTION_LOCK: {
+		fsb14->locked = 1;
+		return true;
+		break;
+	}
+	case ACTION_UNLOCK: {
+		fsb14->locked = 0;
+		return true;
+		break;
+	}
 	default:
 		return false;
 	}
@@ -103,22 +115,30 @@ static bool fsb14_device_exec(device_t *device, action_t *action, event_t *event
 		fsb14->timer = NULL;
 	}
 
-	if (data[1] == 0x01) { // rise
-		fsb14->condition = CONDITION_RISING;
-		fsb14->last_action = ACTION_UP;
-		fsb14->timer = eu_event_timer_create(fsb14->duration * 1000, fsb14_timer_callback, fsb14);
-	} else if (data[1] == 0x02) { // descend
-		fsb14->condition = CONDITION_DESCENDING;
-		fsb14->last_action = ACTION_DOWN;
-		fsb14->timer = eu_event_timer_create(fsb14->duration * 1000, fsb14_timer_callback, fsb14);
-	} else { // stop
-		fsb14->condition = CONDITION_STOPPED;
-		fsb14->last_action = ACTION_STOP;
+	if (!fsb14->locked) {
+		if (data[1] == 0x01) { // rise
+			fsb14->condition = CONDITION_RISING;
+			fsb14->last_action = ACTION_UP;
+			fsb14->timer = eu_event_timer_create(fsb14->duration * 1000, fsb14_timer_callback, fsb14);
+		} else if (data[1] == 0x02) { // descend
+			fsb14->condition = CONDITION_DESCENDING;
+			fsb14->last_action = ACTION_DOWN;
+			fsb14->timer = eu_event_timer_create(fsb14->duration * 1000, fsb14_timer_callback, fsb14);
+		} else { // stop
+			fsb14->condition = CONDITION_STOPPED;
+			fsb14->last_action = ACTION_STOP;
+		}
+
+		msg = eltako_message_create(0, 0x07, data, fsb14->address, 0);
+		eu_log_info("set fsb14 device: %s, type: %s", device_get_name(device),
+				action_type_to_char(action_get_type(action)));
+		rv = eltako_send(msg);
+	} else {
+		eu_log_info("fsb14 device: %s, LOCKED! ignoring action: %s", device_get_name(device),
+				action_type_to_char(action_get_type(action)));
 	}
 
-	msg = eltako_message_create(0, 0x07, data, fsb14->address, 0);
-	eu_log_info("set fsb14 device: %s, type: %s", device_get_name(device), action_type_to_char(action_get_type(action)));
-	return eltako_send(msg);
+	return rv;
 }
 
 static bool fsb14_device_check(device_t *device, condition_t *condition)
@@ -129,7 +149,11 @@ static bool fsb14_device_check(device_t *device, condition_t *condition)
 			condition_type_to_char(condition_get_type(condition)),
 			condition_type_to_char(fsb14->condition));
 
-	if (condition_get_type(condition) == fsb14->condition) {
+	if (condition_get_type(condition) == CONDITION_LOCKED) {
+		return fsb14->locked;
+	} else if (condition_get_type(condition) == CONDITION_UNLOCKED) {
+		return !fsb14->locked;
+	} else if (condition_get_type(condition) == fsb14->condition) {
 		return true;
 	} else {
 		return false;
@@ -140,11 +164,11 @@ static bool fsb14_device_state(device_t *device, eu_variant_map_t *varmap)
 {
 	device_fsb14_t *fsb14 = device_get_userdata(device);
 
-	// eu_variant_map_set_int32(varmap, "duration", fsb14->duration);
+	eu_variant_map_set_int32(varmap, "duration", fsb14->duration);
 	if (fsb14->condition == CONDITION_DOWN ) {
 		eu_variant_map_set_char(varmap, "value", "closed");
 	} else if (fsb14->condition == CONDITION_UP ) {
-		eu_variant_map_set_char(varmap, "value", "open");
+		eu_variant_map_set_char(varmap , "value", "open");
 	} else if (fsb14->condition == CONDITION_RISING ) {
 		eu_variant_map_set_char(varmap, "value", "opening");
 	} else if (fsb14->condition == CONDITION_DESCENDING ) {
@@ -154,6 +178,7 @@ static bool fsb14_device_state(device_t *device, eu_variant_map_t *varmap)
 	} else {
 		eu_variant_map_set_char(varmap, "value", "unknown");
 	}
+	eu_variant_map_set_int32(varmap, "locked", fsb14->locked);
 
 	return true;
 }
@@ -167,7 +192,7 @@ static void fsb14_device_cleanup(device_t *device)
 static device_type_info_t fsb14_info = {
 	.name = "FSB14",
 	.events = 0,
-	.actions = ACTION_UP | ACTION_DOWN | ACTION_STOP | ACTION_TOGGLE_UP | ACTION_TOGGLE_DOWN,
+	.actions = ACTION_UP | ACTION_DOWN | ACTION_STOP | ACTION_TOGGLE_UP | ACTION_TOGGLE_DOWN | ACTION_LOCK | ACTION_UNLOCK,
 	.conditions = CONDITION_UP | CONDITION_DOWN | CONDITION_RISING | CONDITION_DESCENDING,
 	.check_cb = fsb14_device_check,
 	.parse_cb = fsb14_device_parser,

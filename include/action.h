@@ -12,15 +12,17 @@
 #include "types.h"
 
 #define ACTION_TYPE_TABLE \
-	X(0,	ACTION_SET,		"SET") \
+	X(0,	ACTION_SET,			"SET") \
 	X(1,	ACTION_UNSET,		"UNSET") \
 	X(2,	ACTION_TOGGLE,		"TOGGLE") \
-	X(3,	ACTION_DIM,		"DIM") \
-	X(4,	ACTION_UP,		"UP") \
+	X(3,	ACTION_DIM,			"DIM") \
+	X(4,	ACTION_UP,			"UP") \
 	X(5,	ACTION_DOWN,		"DOWN") \
 	X(6,	ACTION_STOP,		"STOP") \
 	X(7,	ACTION_TOGGLE_UP,	"TOGGLE_UP") \
-	X(8,	ACTION_TOGGLE_DOWN,	"TOGGLE_DOWN")
+	X(8,	ACTION_TOGGLE_DOWN,	"TOGGLE_DOWN") \
+	X(9,	ACTION_LOCK,		"LOCK") \
+	X(10,	ACTION_UNLOCK,		"UNLOCK")
 
 #define X(a,b,c) b = (1 << a),
 enum action_type {
