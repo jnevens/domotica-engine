@@ -46,13 +46,16 @@ static bool fsb14_device_parser(device_t *device, char *options[])
 
 static bool fsb14_timer_callback(void *arg)
 {
-	device_fsb14_t *fsb14 = (device_fsb14_t *)arg;
+	device_t *device = (device_t *)arg;
+	device_fsb14_t *fsb14 = device_get_userdata(device);
 
 	fsb14->condition = CONDITION_STOPPED;
 	if (fsb14->last_action == ACTION_UP) {
 		fsb14->condition = CONDITION_UP;
+		device_trigger_event(device, EVENT_UP);
 	} else if (fsb14->last_action == ACTION_DOWN) {
 		fsb14->condition = CONDITION_DOWN;
+		device_trigger_event(device, EVENT_DOWN);
 	}
 	fsb14->last_action = ACTION_STOP;
 	fsb14->timer = NULL;
@@ -119,14 +122,18 @@ static bool fsb14_device_exec(device_t *device, action_t *action, event_t *event
 		if (data[1] == 0x01) { // rise
 			fsb14->condition = CONDITION_RISING;
 			fsb14->last_action = ACTION_UP;
-			fsb14->timer = eu_event_timer_create(fsb14->duration * 1000, fsb14_timer_callback, fsb14);
+			fsb14->timer = eu_event_timer_create(fsb14->duration * 1000, fsb14_timer_callback, device);
 		} else if (data[1] == 0x02) { // descend
 			fsb14->condition = CONDITION_DESCENDING;
 			fsb14->last_action = ACTION_DOWN;
-			fsb14->timer = eu_event_timer_create(fsb14->duration * 1000, fsb14_timer_callback, fsb14);
+			fsb14->timer = eu_event_timer_create(fsb14->duration * 1000, fsb14_timer_callback, device);
 		} else { // stop
 			fsb14->condition = CONDITION_STOPPED;
 			fsb14->last_action = ACTION_STOP;
+		}
+
+		if (action_get_option(action, 1) != NULL) {
+			data[2] = atoi(action_get_option(action, 1));
 		}
 
 		msg = eltako_message_create(0, 0x07, data, fsb14->address, 0);
@@ -191,7 +198,7 @@ static void fsb14_device_cleanup(device_t *device)
 
 static device_type_info_t fsb14_info = {
 	.name = "FSB14",
-	.events = 0,
+	.events = EVENT_UP, EVENT_DOWN,
 	.actions = ACTION_UP | ACTION_DOWN | ACTION_STOP | ACTION_TOGGLE_UP | ACTION_TOGGLE_DOWN | ACTION_LOCK | ACTION_UNLOCK,
 	.conditions = CONDITION_UP | CONDITION_DOWN | CONDITION_RISING | CONDITION_DESCENDING,
 	.check_cb = fsb14_device_check,

@@ -35,6 +35,8 @@
 	X(17,	EVENT_SUN_POSITION,		"SUN_POSITION" ) \
 	X(18,	EVENT_TEMPERATURE,		"TEMPERATURE" ) \
 	X(19,	EVENT_HUMIDITY,			"HUMIDITY" ) \
+	X(20,	EVENT_UP,				"UP" ) \
+	X(21,	EVENT_DOWN,				"DOWN" ) \
 
 #define X(a,b,c) b = (1 << a),
 enum event_type {
