@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 #include <fcntl.h>
 #include <time.h>
 #include <sys/mman.h>
@@ -18,6 +19,8 @@
 
 #include <eu/log.h>
 #include <eu/event.h>
+
+#include <sqlite3.h>
 
 #include "utils_sched.h"
 #include "utils_time.h"
@@ -129,6 +132,62 @@ static int pi_2_mmio_init(void)
 	return MMIO_SUCCESS;
 }
 
+static time_t dht22_get_current_log_time_rounded(device_t *device)
+{
+	time_t now, ltime, diff;
+	dht22_t *dht22 = device_get_userdata(device);
+	now = time(NULL);
+
+	diff = now % dht22->period;
+	if (diff < (dht22->period / 2)) {
+		ltime = now - (now % dht22->period);
+	} else {
+		ltime = now + (dht22->period - (now % dht22->period));
+	}
+
+	return ltime;
+}
+
+
+static void dht22_store_measurement_values(device_t *device) {
+	dht22_t *dht22 = device_get_userdata(device);
+	time_t ltime = dht22_get_current_log_time_rounded(device);
+	struct tm *ltime_tm = gmtime(&ltime);
+	sqlite3 *db;
+	char ltime_str[32];
+	char *err_msg = 0;
+	char *sql = NULL;
+
+	strftime(ltime_str, sizeof(ltime_str), "%Y-%m-%d %H:%M:%S", ltime_tm);
+
+	int rc = sqlite3_open("/data/dbs/measurements.sqlite", &db);
+
+	if (rc != SQLITE_OK) {
+		eu_log_err("Cannot open database: %s\n", sqlite3_errmsg(db));
+		sqlite3_close(db);
+
+		return;
+	}
+
+	asprintf(&sql,
+			"CREATE TABLE IF NOT EXISTS 'measurements' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'name' TEXT, 'timestamp' DATETIME DEFAULT CURRENT_TIMESTAMP, 'type' TEXT, 'value' REAL, 'unit' TEXT);"
+			"INSERT INTO measurements (name, type, timestamp, value, unit) VALUES('%s', 'temperature', '%s', %f, 'ºC'),('%s', 'humidity', '%s', %f, '%');",
+			device_get_name(device), ltime_str, dht22->temperature,
+			device_get_name(device), ltime_str, dht22->humidity);
+
+	rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
+	free(sql);
+
+	if (rc != SQLITE_OK) {
+		eu_log_err("SQL error: %s\n", err_msg);
+		sqlite3_free(err_msg);
+		sqlite3_close(db);
+		return;
+	}
+
+	sqlite3_close(db);
+}
+
 static bool dht22_read_part2(void *arg)
 {
 	device_t *device = arg;
@@ -228,11 +287,14 @@ static bool dht22_read_part2(void *arg)
 
 		eu_log_info("DHT22 %s: Temp: %.2f Hum: %.2f", device_get_name(device), temperature, humidity);
 
-		dht22->temperature = temperature;
-		dht22->humidity = humidity;
+		dht22->temperature = roundf(temperature * 10)/10;
+		dht22->humidity = roundf(humidity * 10)/10;
 
 		device_trigger_event(device, EVENT_TEMPERATURE);
 		device_trigger_event(device, EVENT_HUMIDITY);
+
+		dht22_store_measurement_values(device);
+
 	} else {
 		eu_log_err("DHT22 checksum error!");
 	}
@@ -289,7 +351,7 @@ static bool dht22_parser(device_t *device, char *options[])
 
 	dht22_t *dht22 = calloc(1, sizeof(dht22_t));
 	dht22->gpio = gpio;
-	dht22->period = 900;
+	dht22->period = 300;
 	device_set_userdata(device, dht22);
 
 	if (gpio >= 0 && gpio <= 1024)

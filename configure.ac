@@ -43,7 +43,8 @@ AC_PROG_CC
 AC_PROG_CC_C99
 
 # Check libs
-AC_HAVE_LIBRARY(eu,,AC_MSG_ERROR([libeu is required for building domotica-engine]))
+AC_HAVE_LIBRARY(eu, ,AC_MSG_ERROR([libeu is required for building domotica-engine]))
+AC_HAVE_LIBRARY(sqlite3, , AC_MSG_ERROR([libvsb is required for --enable-mod-eltako]))
 
 # gcov coverage reporting
 
