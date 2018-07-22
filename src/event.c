@@ -15,7 +15,7 @@
 #include "device.h"
 #include "event.h"
 
-#define X(a, b) b,
+#define X(a, b, c) c,
 static char *event_type_name[] = {
 		EVENT_TYPE_TABLE
 		NULL
@@ -48,7 +48,17 @@ void event_destroy(event_t *event)
 
 const char *event_get_name(event_t *event)
 {
-	return event_type_name[event->type];
+	int i;
+	event_type_e type = event->type;
+	const char *type_name = NULL;
+	for(i = 0; event_type_name[i] != NULL; i++) {
+		if (type & 0x1) {
+			type_name = event_type_name[i];
+			break;
+		}
+		type >>= 1;
+	}
+	return type_name;
 }
 
 device_t *event_get_device(event_t *event)
@@ -111,9 +121,9 @@ event_type_e event_type_from_char(const char *name) {
 	if (name == NULL)
 		return -1;
 
-	while (event_type_name[i]) {
+	while (event_type_name[i] != NULL) {
 		if (strcmp(event_type_name[i], name) == 0) {
-			return i;
+			return (1 << i);
 		}
 		i++;
 	}
