@@ -18,6 +18,7 @@
 #include <sys/time.h>
 
 #include <eu/log.h>
+#include <eu/list.h>
 #include <eu/event.h>
 
 #include <sqlite3.h>
@@ -31,21 +32,14 @@
 
 typedef struct {
 	int gpio;
-	eu_event_timer_t *timer;
-	time_t period;
+	time_t last_measurement;
 	float temperature;
 	float humidity;
 } dht22_t;
 
-// Define errors and return values.
-#define DHT_ERROR_TIMEOUT -1
-#define DHT_ERROR_CHECKSUM -2
-#define DHT_ERROR_ARGUMENT -3
-#define DHT_ERROR_GPIO -4
-#define DHT_SUCCESS 0
-#define DHT11 11
-#define DHT22 22
-#define AM2302 22
+// Defines
+#define MEASURMENT_INTERVAL 300
+
 #define MMIO_SUCCESS 0
 #define MMIO_ERROR_DEVMEM -1
 #define MMIO_ERROR_MMAP -2
@@ -64,7 +58,12 @@ typedef struct {
 // the data afterwards.
 #define DHT_PULSES 41
 
-volatile uint32_t* pi_2_mmio_gpio = NULL;
+/* variables */
+static volatile uint32_t* pi_2_mmio_gpio = NULL;
+static eu_list_t *dht22_devices = NULL;
+
+/* functions */
+static void dht22_measure_devices(bool initial);
 
 static inline void pi_2_mmio_set_input(const int gpio_number)
 {
@@ -132,26 +131,24 @@ static int pi_2_mmio_init(void)
 	return MMIO_SUCCESS;
 }
 
-static time_t dht22_get_current_log_time_rounded(device_t *device)
+static time_t dht22_get_current_log_time_rounded(void)
 {
 	time_t now, ltime, diff;
-	dht22_t *dht22 = device_get_userdata(device);
 	now = time(NULL);
 
-	diff = now % dht22->period;
-	if (diff < (dht22->period / 2)) {
-		ltime = now - (now % dht22->period);
+	diff = now % MEASURMENT_INTERVAL;
+	if (diff < (MEASURMENT_INTERVAL / 2)) {
+		ltime = now - (now % MEASURMENT_INTERVAL);
 	} else {
-		ltime = now + (dht22->period - (now % dht22->period));
+		ltime = now + (MEASURMENT_INTERVAL - (now % MEASURMENT_INTERVAL));
 	}
 
 	return ltime;
 }
 
-
 static void dht22_store_measurement_values(device_t *device) {
 	dht22_t *dht22 = device_get_userdata(device);
-	time_t ltime = dht22_get_current_log_time_rounded(device);
+	time_t ltime = dht22_get_current_log_time_rounded();
 	struct tm *ltime_tm = gmtime(&ltime);
 	sqlite3 *db;
 	char ltime_str[32];
@@ -219,7 +216,7 @@ static bool dht22_read_part2(void *arg)
 			// Timeout waiting for response.
 			sched_set_default_priority();
 			eu_log_err("DHT22 timeout!");
-			return false;
+			goto cleanup;
 		}
 	}
 
@@ -231,7 +228,7 @@ static bool dht22_read_part2(void *arg)
 				// Timeout waiting for response.
 				sched_set_default_priority();
 				eu_log_err("DHT22 timeout!");
-				return false;
+				goto cleanup;
 			}
 		}
 		// Count how long pin is high and store in pulseCounts[i+1]
@@ -240,7 +237,7 @@ static bool dht22_read_part2(void *arg)
 				// Timeout waiting for response.
 				sched_set_default_priority();
 				eu_log_err("DHT22 timeout!");
-				return false;
+				goto cleanup;
 			}
 		}
 	}
@@ -287,28 +284,35 @@ static bool dht22_read_part2(void *arg)
 
 		eu_log_info("DHT22 %s: Temp: %.2f Hum: %.2f", device_get_name(device), temperature, humidity);
 
-		dht22->temperature = roundf(temperature * 10)/10;
-		dht22->humidity = roundf(humidity * 10)/10;
+		if (humidity <= 100.0) {
+			dht22->temperature = temperature;
+			dht22->humidity = humidity;
+			dht22->last_measurement = time(NULL);
 
-		device_trigger_event(device, EVENT_TEMPERATURE);
-		device_trigger_event(device, EVENT_HUMIDITY);
+			device_trigger_event(device, EVENT_TEMPERATURE);
+			device_trigger_event(device, EVENT_HUMIDITY);
 
-		dht22_store_measurement_values(device);
+			dht22_store_measurement_values(device);
+		}
 
 	} else {
 		eu_log_err("DHT22 checksum error!");
 	}
 
+cleanup:
+	/* read next dht22 sensor! */
+	dht22_measure_devices(false);
+
 	return false;
 }
 
-static int dht22_read(device_t *device)
+static void dht22_read_part1(device_t *device)
 {
 	dht22_t *dht22 = device_get_userdata(device);
 
 	// Initialize GPIO library.
 	if (pi_2_mmio_init() < 0) {
-		return DHT_ERROR_GPIO;
+		return;
 	}
 
 	// Set pin to output.
@@ -320,27 +324,38 @@ static int dht22_read(device_t *device)
 	eu_event_timer_create(500, dht22_read_part2, device);
 }
 
-static void dht22_read_schedule(device_t *device);
-
-static bool dht22_read_schedule_callback(void *arg)
+static void dht22_measure_device(device_t *device)
 {
-	device_t *device = (device_t *)arg;
-
-	dht22_read(device);
-	dht22_read_schedule(device);
-
-	return false;
+	dht22_read_part1(device);
 }
 
-static void dht22_read_schedule(device_t *device)
+static void dht22_measure_devices(bool initial)
 {
-	dht22_t *dht22 = device_get_userdata(device);
-	time_t ct = time(NULL);
-	time_t delay = dht22->period - (ct % dht22->period);
+	static time_t mtime = 0;
 
-	eu_log_debug("schedule DHT22 read in: %ds", delay);
+	if (initial)
+		mtime = dht22_get_current_log_time_rounded();
 
-	eu_event_timer_create(delay * 1000, dht22_read_schedule_callback, device);
+	eu_list_for_each_declare(node, dht22_devices) {
+		device_t *device = eu_list_node_data(node);
+		dht22_t *dht22 = device_get_userdata(device);
+
+		if (dht22->last_measurement < mtime) {
+			dht22_measure_device(device);
+			break;
+		}
+	}
+}
+
+static bool dht22_calculate_next_measurement_moment(void *arg)
+{
+	uint64_t until_next = (1000 * MEASURMENT_INTERVAL) - (get_current_time_ms() % (1000 * MEASURMENT_INTERVAL));
+	eu_event_timer_create(until_next, dht22_calculate_next_measurement_moment, (void *)0xdeadbeef);
+
+	if (arg != NULL) {
+		dht22_measure_devices(true);
+	}
+	return false;
 }
 
 static bool dht22_parser(device_t *device, char *options[])
@@ -351,13 +366,12 @@ static bool dht22_parser(device_t *device, char *options[])
 
 	dht22_t *dht22 = calloc(1, sizeof(dht22_t));
 	dht22->gpio = gpio;
-	dht22->period = 300;
 	device_set_userdata(device, dht22);
 
 	if (gpio >= 0 && gpio <= 1024)
 		rv = true;
 
-	dht22_read_schedule(device);
+	eu_list_append(dht22_devices, device);
 
 	return rv;
 }
@@ -375,7 +389,6 @@ static bool dht22_device_state(device_t *device, eu_variant_map_t *state)
 static void dht22_device_cleanup(device_t *device)
 {
 	dht22_t *dht22 = device_get_userdata(device);
-	eu_event_timer_destroy(dht22->timer);
 	free(dht22);
 }
 
@@ -395,6 +408,9 @@ bool dht22_technology_init()
 {
 	device_type_register(&dht22_info);
 
+	dht22_devices = eu_list_create();
+
 	eu_log_info("Succesfully initialized: Sunriset!");
+	dht22_calculate_next_measurement_moment(NULL);
 	return true;
 }
