@@ -4,7 +4,7 @@ domotica_engine_dir = $(sysconfdir)/domotica-engine
 
 sbin_PROGRAMS = domotica-engine domctl
 
-domotica_engine_LDADD = -leu $(LDADD) -lm -lsqlite3
+domotica_engine_LDADD = -leu $(LDADD) -lm -lsqlite3 -lcurl
 domotica_engine_CFLAGS = -rdynamic -funwind-tables -D_GNU_SOURCE
 domotica_engine_SOURCES = \
 	action.c \
@@ -27,6 +27,7 @@ domotica_engine_SOURCES = \
 	sunriset.c \
 	technologies.c \
 	timer.c \
+	utils_http.c \
 	utils_gpio.c \
 	utils_sched.c \
 	utils_sunriset.c \
@@ -47,10 +48,11 @@ domotica_engine_LDADD += -lSolTrack
 domotica_engine_SOURCES += \
 	soltracker.c
 endif
+
 if HAVE_MOD_MUSICCAST
-domotica_engine_LDADD += -lcurl
+domotica_engine_LDADD += -lcurl -lmusiccast
 domotica_engine_SOURCES += \
-	musiccast.c
+	yamaha_mc.c
 endif
 
 domctl_LDADD = -leu

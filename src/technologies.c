@@ -13,12 +13,13 @@
 #include "eltako.h"
 #include "soltracker.h"
 #include "gpio.h"
-#include "technologies.h"
+#include "yamaha_mc.h"
 #include "timer.h"
 #include "sunriset.h"
 #include "dht22.h"
 #include "bool.h"
-#include "musiccast.h"
+
+#include "technologies.h"
 
 typedef struct {
 	technology_init_fn_t init_fn;
