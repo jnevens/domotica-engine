@@ -17,6 +17,7 @@
 #include "utils_time.h"
 #include "schedule.h"
 #include "remote.h"
+#include "store.h"
 
 static void termination_handler(int signum)
 {
@@ -111,6 +112,10 @@ int main(int argc, char *argv[])
 	if(rules_read_dir(arguments_get()->rulesdir, 1))
 		goto stop;
 	if(rules_read_dir(arguments_get()->rulesdir, 2))
+		goto stop;
+
+	// restore state
+	if (store_init())
 		goto stop;
 
 	if(arguments_get()->config_test) {

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <eu/log.h>
 #include <eu/event.h>
@@ -196,6 +197,37 @@ static void fsb14_device_cleanup(device_t *device)
 	free(fsb14);
 }
 
+static bool fsb14_device_store(device_t *device, eu_variant_map_t *state)
+{
+	device_fsb14_t *fsb14 = device_get_userdata(device);
+	if (fsb14->condition == CONDITION_DOWN ) {
+		eu_variant_map_set_char(state, "value", "closed");
+	} else if (fsb14->condition == CONDITION_UP ) {
+		eu_variant_map_set_char(state , "value", "open");
+	} else {
+		eu_variant_map_set_char(state, "value", "stopped");
+	}
+	eu_variant_map_set_bool(state, "locked", fsb14->locked);
+
+	return true;
+}
+
+static bool fsb14_device_restore(device_t *device, eu_variant_map_t *state)
+{
+	device_fsb14_t *fsb14 = device_get_userdata(device);
+	fsb14->locked = eu_variant_map_get_bool(state, "locked");
+	char *value = eu_variant_map_get_char(state, "value");
+	if (strcmp(value, "closed")) {
+		fsb14->condition = CONDITION_DOWN;
+	} else if (strcmp(value, "open")) {
+		fsb14->condition = CONDITION_UP;
+	} else if (strcmp(value, "closed")) {
+		fsb14->condition = CONDITION_STOPPED;
+	}
+	free(value);
+	return true;
+}
+
 static device_type_info_t fsb14_info = {
 	.name = "FSB14",
 	.events = EVENT_UP, EVENT_DOWN,
@@ -206,6 +238,8 @@ static device_type_info_t fsb14_info = {
 	.exec_cb = fsb14_device_exec,
 	.state_cb = fsb14_device_state,
 	.cleanup_cb = fsb14_device_cleanup,
+	.store_cb = fsb14_device_store,
+	.restore_cb = fsb14_device_restore,
 };
 
 bool eltako_fsb14_init(void)

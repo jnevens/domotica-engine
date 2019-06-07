@@ -129,6 +129,19 @@ static void fud14_device_cleanup(device_t *device)
 	free(fud14);
 }
 
+static bool fud14_device_store(device_t *device, eu_variant_map_t *state)
+{
+	device_fud14_t *fud14 = device_get_userdata(device);
+	eu_variant_map_set_int32(state, "value", fud14->dim_value);
+	return true;
+}
+
+static bool fud14_device_restore(device_t *device, eu_variant_map_t *state)
+{
+	device_fud14_t *fud14 = device_get_userdata(device);
+	fud14->dim_value = eu_variant_map_get_int32(state, "value");
+	return true;
+}
 
 static device_type_info_t fud14_info = {
 	.name = "FUD14",
@@ -139,6 +152,8 @@ static device_type_info_t fud14_info = {
 	.parse_cb = fud14_device_parser,
 	.exec_cb = fud14_device_exec,
 	.state_cb = fud14_device_state,
+	.store_cb = fud14_device_store,
+	.restore_cb = fud14_device_restore,
 	.cleanup_cb = fud14_device_cleanup,
 };
 

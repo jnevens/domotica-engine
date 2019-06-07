@@ -25,6 +25,8 @@ typedef bool (*device_parse_fn_t)(device_t *device, char *options[]);
 typedef bool (*device_exec_fn_t)(device_t *device, action_t *action, event_t *event);
 typedef bool (*device_check_fn_t)(device_t *device, condition_t *condition);
 typedef bool (*device_state_fn_t)(device_t *device, eu_variant_map_t *state);
+typedef bool (*device_store_fn_t)(device_t *device, eu_variant_map_t *state);
+typedef bool (*device_restore_fn_t)(device_t *device, eu_variant_map_t *state);
 typedef void (*device_cleanup_fn_t)(device_t *device);
 
 typedef struct {
@@ -37,6 +39,8 @@ typedef struct {
 	device_check_fn_t check_cb;
 	device_state_fn_t state_cb;
 	device_cleanup_fn_t cleanup_cb;
+	device_store_fn_t store_cb;
+	device_restore_fn_t restore_cb;
 } device_type_info_t;
 
 device_t *device_create(char *name, const char *devtype, char *options[]);
@@ -49,6 +53,8 @@ bool device_set(device_t *device, action_t *action, event_t *event);
 void device_trigger_event(device_t *device, event_type_e event);
 bool device_check(device_t *device, condition_t *condition);
 eu_variant_map_t *device_state(device_t *device);
+eu_variant_map_t *device_store(device_t *device);
+bool device_restore(device_t *device, eu_variant_map_t *state);
 
 bool device_type_register(device_type_info_t *device_type_info);
 bool device_type_exists(const char *dev_type_name);

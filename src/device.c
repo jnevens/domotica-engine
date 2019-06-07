@@ -24,6 +24,8 @@ typedef struct {
 	device_check_fn_t check_cb;
 	device_state_fn_t state_cb;
 	device_cleanup_fn_t cleanup_cb;
+	device_store_fn_t store_cb;
+	device_restore_fn_t restore_cb;
 	action_type_e actions;
 	event_type_e events;
 	condition_type_e conditions;
@@ -167,6 +169,31 @@ eu_variant_map_t *device_state(device_t *device)
 	return state;
 }
 
+eu_variant_map_t *device_store(device_t *device)
+{
+	eu_variant_map_t *state = NULL;
+
+	device_type_t *device_type = device->device_type;
+	if (device_type->store_cb) {
+		state = eu_variant_map_create();
+		device_type->store_cb(device, state);
+	}
+
+	return state;
+}
+
+bool device_restore(device_t *device, eu_variant_map_t *state)
+{
+	if (!device)
+		return false;
+
+	device_type_t *device_type = device->device_type;
+	if (device_type->restore_cb) {
+		device_type->restore_cb(device, state);
+	}
+
+	return true;
+}
 
 static device_type_t *device_type_lookup(const char *dev_type_name)
 {
@@ -202,11 +229,18 @@ bool device_type_register(device_type_info_t *device_type_info)
 	type->check_cb = device_type_info->check_cb;
 	type->state_cb = device_type_info->state_cb;
 	type->cleanup_cb = device_type_info->cleanup_cb;
+	type->store_cb = device_type_info->store_cb;
+	type->restore_cb = device_type_info->restore_cb;
 
 	eu_log_info("Register device type: %s", device_type_info->name);
 
 	eu_list_append(device_types, type);
 	return true;
+}
+
+const char *device_type_get_name(device_type_t *device_type)
+{
+	return device_type->name;
 }
 
 const char *device_get_name(device_t *device)
