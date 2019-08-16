@@ -112,7 +112,7 @@ void musiccast_device_cleanup(device_t *device)
 static device_type_info_t musiccast_info = {
 	.name = "MUSICCAST",
 	.events = 0,
-	.actions = 0,
+	.actions =  ACTION_SET | ACTION_UNSET | ACTION_TOGGLE | ACTION_UP | ACTION_DOWN,
 	.conditions = 0,
 	.check_cb = NULL,
 	.parse_cb = musiccast_device_parser,
