@@ -14,12 +14,14 @@
 
 #include "utils_time.h"
 
-void busy_wait_milliseconds(uint32_t millis)
+
+
+void busy_wait_microseconds(uint32_t micros)
 {
 	// Set delay time period.
 	struct timeval deltatime;
-	deltatime.tv_sec = millis / 1000;
-	deltatime.tv_usec = (millis % 1000) * 1000;
+	deltatime.tv_sec = micros / 1000000;
+	deltatime.tv_usec = (micros % 1000000);
 	struct timeval walltime;
 	// Get current time and add delay to find end time.
 	gettimeofday(&walltime, NULL);
@@ -29,6 +31,11 @@ void busy_wait_milliseconds(uint32_t millis)
 	while (timercmp(&walltime, &endtime, <)) {
 		gettimeofday(&walltime, NULL);
 	}
+}
+
+void busy_wait_milliseconds(uint32_t millis)
+{
+	busy_wait_microseconds(millis * 1000);
 }
 
 void sleep_milliseconds(uint32_t millis)

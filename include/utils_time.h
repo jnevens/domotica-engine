@@ -19,6 +19,7 @@ int32_t get_current_timezone_offset(void);
 // Busy wait delay for most accurate timing, but high CPU usage.
 // Only use this for short periods of time (a few hundred milliseconds at most)!
 void busy_wait_milliseconds(uint32_t millis);
+void busy_wait_microseconds(uint32_t micros);
 
 // General delay that sleeps so CPU usage is low, but accuracy is potentially bad.
 void sleep_milliseconds(uint32_t millis);

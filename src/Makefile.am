@@ -12,8 +12,10 @@ domotica_engine_SOURCES = \
 	bool.c \
 	condition.c \
 	device.c \
+	device_logs.c \
 	device_list.c \
 	dht22.c \
+	dht22_worker.c \
 	engine.c \
 	event.c \
 	gpio.c \
@@ -31,6 +33,7 @@ domotica_engine_SOURCES = \
 	utils_http.c \
 	utils_gpio.c \
 	utils_sched.c \
+	utils_string.c \
 	utils_sunriset.c \
 	utils_time.c
 

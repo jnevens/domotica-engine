@@ -89,7 +89,7 @@ line_t *line_parse(char *strline)
 	}
 
 	free(ln);
-	int minoptions = (line->statement == STATEMENT_STATE) ? 0 : 1;
+	int minoptions = ((line->statement == STATEMENT_STATE) || (line->statement == STATEMENT_LOGS)) ? 0 : 1;
 	if (n < (1 + minoptions)) {
 		line_destroy(line);
 		line = NULL;

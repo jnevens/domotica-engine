@@ -21,15 +21,17 @@
 #include <eu/event.h>
 #include <eu/variant.h>
 
+#include "utils_string.h"
 #include "device.h"
 #include "device_list.h"
+#include "device_logs.h"
 #include "action.h"
 #include "line_parser.h"
 
 static eu_event_t *event_tcp = NULL;
 static eu_event_t *event_unix = NULL;
 
-static bool handle_command(char *buf, eu_variant_map_t **map)
+static bool handle_command(char *buf, eu_variant_map_t **map, char **json)
 {
 	bool rv = false;
 	line_t *ln = line_parse(buf);
@@ -73,6 +75,21 @@ static bool handle_command(char *buf, eu_variant_map_t **map)
 			}
 			break;
 		}
+		case STATEMENT_LOGS: {
+			device_t *device = device_list_find_by_name(ln->name);
+			if (!device) {
+				eu_log_err("Cannot find device: %s", ln->name);
+				goto end;
+			}
+			*json = device_logs_get_json(device, 3600*24);
+			if (*json == NULL) {
+				eu_log_err("Cannot get logs of device: %s", ln->name);
+				goto end;
+			} else {
+				rv = true;
+			}
+			break;
+		}
 		default:
 			eu_log_err("unsupported type of command!");
 			break;
@@ -91,50 +108,40 @@ static void remote_connection_close(eu_socket_t *sock)
 	eu_socket_destroy(sock);
 }
 
-static void strappend(char **base_ptr, const char *append)
-{
-	char *base = NULL;
-	size_t len_base = strlen(*base_ptr);
-	size_t len_app = strlen(append);
-	size_t len_new = len_base + len_app + 1;
-
-	base = realloc(*base_ptr, len_new);
-
-	memcpy(base + len_base, append, len_app);
-	base[len_base + len_app] = '\0';
-
-	*base_ptr = base;
-}
-
 static void handle_incoming_conn_event(int fd, short int revents, void *arg)
 {
 	char buf[128];
 	eu_socket_t *conn_sock = arg;
 	eu_variant_map_t *map = NULL;
+	char *json = NULL;
 
 	memset(buf, '\0', sizeof(buf));
 
 	int rv = eu_socket_read(conn_sock, buf, sizeof(buf) - 1);
 	if (rv > 0) {
 		char *response = NULL;
-		if (handle_command(buf, &map) == true) {
+		if (handle_command(buf, &map, &json) == true) {
 			if (map) {
 				response = strdup("{\n");
 				int map_count = eu_variant_map_count(map);
 				int count = 1;
 				eu_variant_map_for_each_pair(pair, map) {
-					char tmp[128];
+					char *tmp = NULL;
 					const char *key = eu_variant_map_pair_get_key(pair);
 					eu_variant_t *var = eu_variant_map_pair_get_val(pair);
 
 					if (eu_variant_type(var) == EU_VARIANT_TYPE_INT32) {
-						sprintf(tmp, "\t\"%s\" : \"%d\"", key, eu_variant_int32(var));
-					}else if (eu_variant_type(var) == EU_VARIANT_TYPE_CHAR) {
-						sprintf(tmp, "\t\"%s\" : \"%s\"", key, eu_variant_da_char(var));
-					}else if (eu_variant_type(var) == EU_VARIANT_TYPE_FLOAT) {
-						sprintf(tmp, "\t\"%s\" : \"%f\"", key, eu_variant_float(var));
-					}else if (eu_variant_type(var) == EU_VARIANT_TYPE_DOUBLE) {
-						sprintf(tmp, "\t\"%s\" : \"%lf\"", key, eu_variant_double(var));
+						asprintf(&tmp, "\t\"%s\" : \"%d\"", key, eu_variant_int32(var));
+					} else if (eu_variant_type(var) == EU_VARIANT_TYPE_CHAR) {
+						asprintf(&tmp, "\t\"%s\" : \"%s\"", key, eu_variant_da_char(var));
+					} else if (eu_variant_type(var) == EU_VARIANT_TYPE_FLOAT) {
+						asprintf(&tmp, "\t\"%s\" : \"%f\"", key, eu_variant_float(var));
+					} else if (eu_variant_type(var) == EU_VARIANT_TYPE_DOUBLE) {
+						asprintf(&tmp, "\t\"%s\" : \"%lf\"", key, eu_variant_double(var));
+					} else if (eu_variant_type(var) == EU_VARIANT_TYPE_BOOL) {
+						asprintf(&tmp, "\t\"%s\" : \"%d\"", key, eu_variant_bool(var));
+					} else if (eu_variant_type(var) == EU_VARIANT_TYPE_MAP) {
+						asprintf(&tmp, "\t\"%s\" : \"%s\"", key, "MAP-TODO");
 					}
 
 					strappend(&response, tmp);
@@ -142,8 +149,11 @@ static void handle_incoming_conn_event(int fd, short int revents, void *arg)
 						strappend(&response, ",");
 					strappend(&response, "\n");
 					count++;
+					free(tmp);
 				}
 				strappend(&response, "}\n");
+			} else if (json) {
+				response = strdup(json);
 			} else {
 				response = strdup("OK");
 			}
@@ -161,9 +171,10 @@ static void handle_incoming_conn_event(int fd, short int revents, void *arg)
 		remote_connection_close(conn_sock);
 	}
 
-	if (map) {
+	if (map)
 		eu_variant_map_destroy(map);
-	}
+	if (json)
+		free(json);
 }
 
 static void handle_incoming_conn_error(int fd, short int revents, void *arg)
