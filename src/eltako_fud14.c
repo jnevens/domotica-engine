@@ -92,7 +92,11 @@ static bool fud14_device_exec(device_t *device, action_t *action, event_t *event
 	}
 	eu_log_info("set fud14 device: %s, type: %s, new value: %d", device_get_name(device),
 			action_type_to_char(action_get_type(action)), fud14->dim_value);
-	return eltako_send(msg);
+	bool rv = eltako_send(msg);
+
+	device_trigger_event(device, (fud14->dim_value > 0) ? EVENT_SET : EVENT_UNSET );
+
+	return rv;
 }
 
 static bool fud14_device_check(device_t *device, condition_t *condition)
