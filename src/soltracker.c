@@ -29,7 +29,10 @@ typedef struct {
 	double lon;
 	double azimuth;
 	double altitude;
+	double angle;
+	double view_angle;
 	device_t *device;
+	bool in_sun;
 } soltracker_t;
 
 static eu_list_t *soltracker_list = NULL;
@@ -85,6 +88,7 @@ static void soltracker_calculate_position(double lon, double lat, double *azi, d
 static void soltracker_check_tracker(soltracker_t *st)
 {
 	device_t *device = st->device;
+	bool in_sun = false;
 	double azi = 0.0;
 	double alt = 0.0;
 
@@ -92,6 +96,25 @@ static void soltracker_check_tracker(soltracker_t *st)
 
 	st->azimuth = azi;
 	st->altitude = alt;
+
+	double angle_on = st->angle - st->view_angle/2;
+	double angle_off = st->angle + st->view_angle/2;
+
+	if ((alt >= 0.0) && (azi > angle_on) && (azi < angle_off)) {
+		in_sun = true;
+	}
+
+	eu_log_info("soltracker %s (on/off: %lf/%lf) in %s",
+			device_get_name(device),
+			angle_on, angle_off,
+			(in_sun) ? "SUN" : "SHADOW");
+
+	if (in_sun != st->in_sun) {
+		st->in_sun = in_sun;
+		event_t *event = event_create(device, (in_sun) ? EVENT_SET : EVENT_UNSET);
+		engine_trigger_event(event);
+		event_destroy(event);
+	}
 
 	event_t *event = event_create(device, EVENT_SUN_POSITION);
 	event_option_set_double(event, "azimuth", azi);
@@ -112,11 +135,11 @@ static bool soltracker_parser(device_t *device, char *options[])
 {
 	eu_log_info("Parse soltracker %s", device_get_name(device));
 
-	double temp, lat, lon;
+	double temp, lat, lon, angle, view_angle = 180;
 	int hemisphere;
 	eu_log_debug("lat: %s, lon: %s", options[0], options[1]);
 
-	if (2 == sscanf(options[0], "%lf%1[Nn]", &temp, &hemisphere)) {
+	if ((options[0]) && (2 == sscanf(options[0], "%lf%1[Nn]", &temp, &hemisphere))) {
 		lat = temp;
 	} else if (2 == sscanf(options[0], "%lf%1[Ss]", &temp, &hemisphere)) {
 		lat = -temp;
@@ -124,7 +147,7 @@ static bool soltracker_parser(device_t *device, char *options[])
 		eu_log_err("Cannot parse latitude!");
 		return false;
 	}
-	if (2 == sscanf(options[1], "%lf%1[Ww]", &temp, &hemisphere)) {
+	if ((options[1]) && (2 == sscanf(options[1], "%lf%1[Ww]", &temp, &hemisphere))) {
 		lon = -temp;
 	/* this looks different from the others because 77E
 	 parses as scientific notation */
@@ -136,8 +159,16 @@ static bool soltracker_parser(device_t *device, char *options[])
 		eu_log_err("Cannot parse longitude!");
 		return false;
 	}
+	if ((options[2]) && (1 != sscanf(options[2], "%lf", &angle))) {
+		eu_log_err("Cannot parse tracker angle!");
+		return false;
+	}
 
-	eu_log_info("Suntracker: lat: %f lon: %f", lat, lon);
+	if (options[3]) {
+		sscanf(options[3], "%lf", &view_angle);
+	}
+
+	eu_log_info("Suntracker: lat: %f lon: %f, angle: %f, view_angle: %f", lat, lon, angle, view_angle);
 
 	soltracker_t *st = calloc(1, sizeof(soltracker_t));
 	if (st) {
@@ -150,6 +181,8 @@ static bool soltracker_parser(device_t *device, char *options[])
 		st->lat = lat;
 		st->azimuth = azi;
 		st->altitude = alt;
+		st->angle = angle;
+		st->view_angle = view_angle;
 
 		eu_list_append(soltracker_list, st);
 		st->device = device;
@@ -180,6 +213,9 @@ static bool soltracker_state(device_t *device, eu_variant_map_t *varmap)
 	eu_variant_map_set_double(varmap, "longitude", st->lon);
 	eu_variant_map_set_double(varmap, "azimuth", st->azimuth);
 	eu_variant_map_set_double(varmap, "altitude", st->altitude);
+	eu_variant_map_set_double(varmap, "angle", st->angle);
+	eu_variant_map_set_double(varmap, "view_angle", st->view_angle);
+	eu_variant_map_set_bool(varmap, "in_sun", st->in_sun);
 
 	return true;
 }
@@ -193,9 +229,9 @@ static bool soltrack_timer_cb(void *arg)
 
 static device_type_info_t soltracker_info = {
 	.name = "SOLTRACKER",
-	.events = 0,
+	.events = EVENT_SET | EVENT_UNSET,
 	.actions = 0,
-	.conditions = 0,
+	.conditions = CONDITION_SET | CONDITION_UNSET,
 	.check_cb = soltracker_check,
 	.parse_cb = soltracker_parser,
 	.exec_cb = NULL,
