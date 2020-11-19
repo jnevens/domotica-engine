@@ -20,10 +20,14 @@ void usage(void)
 int main(int argc, char *argv[])
 {
 	char buf[1024];
+	int rv = 0;
 
 	if (argc < 1) {
 		usage();
 	}
+
+	eu_log_init("domctl");
+	eu_log_set_print_level(EU_LOG_NOTICE);
 
 	eu_socket_t *socket = eu_socket_create_unix();
 	if (!socket) {
@@ -33,9 +37,10 @@ int main(int argc, char *argv[])
 		eu_log_fatal("Failed to connect to deamon");
 	}
 	eu_socket_write(socket, argv[1], strlen(argv[1]) + 1);
-	int rv = eu_socket_read(socket, buf, sizeof(buf));
-	if (rv > 0) {
-		printf("response:\n%s\n", buf);
+
+	while((rv = eu_socket_read(socket, buf, sizeof(buf))) > 0) {
+		eu_socket_set_blocking(socket, false);
+		printf("%.*s", rv, buf);
 	}
 	eu_socket_destroy(socket);
 

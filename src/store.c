@@ -109,6 +109,6 @@ int store_init(void)
 {
 	restore_devices_state();
 	store_devices_state();
-	store_timer = eu_event_timer_create(60 * 1000,  store_device_states_timer_cb, NULL);
+	store_timer = eu_event_timer_create(300 * 1000,  store_device_states_timer_cb, NULL);
 	return restore_devices_state();
 }

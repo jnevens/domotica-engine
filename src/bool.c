@@ -84,6 +84,29 @@ static bool bool_check(device_t *device, condition_t *condition)
 	return false;
 }
 
+static bool bool_state(device_t *device, eu_variant_map_t *state)
+{
+	bool_t *b = device_get_userdata(device);
+
+	eu_variant_map_set_int32(state, "value", b->val);
+
+	return true;
+}
+
+static bool bool_store(device_t *device, eu_variant_map_t *state)
+{
+	bool_t *b = device_get_userdata(device);
+	eu_variant_map_set_int32(state, "value", b->val);
+	return true;
+}
+
+static bool bool_restore(device_t *device, eu_variant_map_t *state)
+{
+	bool_t *b = device_get_userdata(device);
+	b->val = eu_variant_map_get_int32(state, "value");
+	return true;
+}
+
 static void bool_cleanup(device_t *device)
 {
 	bool_t *b = device_get_userdata(device);
@@ -98,6 +121,9 @@ static device_type_info_t bool_info = {
 	.check_cb = bool_check,
 	.parse_cb = bool_parser,
 	.exec_cb = bool_exec,
+	.state_cb = bool_state,
+	.store_cb = bool_store,
+	.restore_cb = bool_restore,
 	.cleanup_cb = bool_cleanup,
 };
 
