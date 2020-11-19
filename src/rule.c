@@ -36,8 +36,8 @@ void rule_destroy(rule_t *rule)
 {
 	if (rule) {
 		event_destroy(rule->event);
-		eu_list_destroy_with_data(rule->conditions, condition_destroy);
-		eu_list_destroy_with_data(rule->actions, action_destroy);
+		eu_list_destroy_with_data(rule->conditions, (eu_list_destroy_element_fn_t)condition_destroy);
+		eu_list_destroy_with_data(rule->actions, (eu_list_destroy_element_fn_t)action_destroy);
 		free(rule);
 	}
 }

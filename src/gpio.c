@@ -108,7 +108,7 @@ void gpio_input_edge_detected_cb(int fd, short int revents, void *arg)
 	read(fd, buf, sizeof(buf));
 	int edge = (buf[0] == '1') ? 1 : 0;
 
-	device_t *device = device_list_find(gpio_input_find_by_fd_cb, (void *)fd);
+	device_t *device = device_list_find(gpio_input_find_by_fd_cb, (void *)(fd + NULL));
 	if (device) {
 		gpio_t *input_gpio = device_get_userdata(device);
 		if (input_gpio->value != edge && ((get_current_time_ms() - input_gpio->last_time_ms) > 50)) {
