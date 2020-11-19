@@ -20,6 +20,10 @@
 typedef struct {
 	struct in_addr ip;
 	char *zone;
+	bool power;
+	int32_t volume;
+	int32_t volume_max;
+	int32_t volume_step;
 	musiccast_conn_t *mcc;
 } device_musiccast_t;
 
@@ -62,15 +66,18 @@ static bool musiccast_device_parser(device_t *device, char *options[])
 			return false;
 		}
 
-		device_musiccast_t *mc = calloc(1, sizeof(device_musiccast_t));
-		mc->ip = ip;
-		mc->zone = zone;
-		mc->mcc = mcc;
-		device_set_userdata(device, mc);
+		device_musiccast_t *dmc = calloc(1, sizeof(device_musiccast_t));
+		dmc->ip = ip;
+		dmc->zone = zone;
+		dmc->mcc = mcc;
+		dmc->volume = 0;
+		dmc->volume_max = 10;
+		dmc->volume_step = 1;
+		device_set_userdata(device, dmc);
 		eu_log_debug("Yamaha MusicCast device created (name: %s, IP: %s, zone: %s)",
-				device_get_name(device), inet_ntoa(mc->ip), mc->zone);
+				device_get_name(device), inet_ntoa(dmc->ip), dmc->zone);
 
-		musiccast_zone_status(mc->mcc, mc->zone);
+		musiccast_zone_status(dmc->mcc, dmc->zone);
 
 		return true;
 	}
@@ -103,6 +110,18 @@ static bool musiccast_device_exec(device_t *device, action_t *action, event_t *e
 	return false;
 }
 
+static bool musiccast_device_state(device_t *device, eu_variant_map_t *state)
+{
+	device_musiccast_t *dmc = device_get_userdata(device);
+
+	eu_variant_map_set_bool(state, "power", dmc->power);
+	eu_variant_map_set_int32(state, "volume", dmc->volume);
+	eu_variant_map_set_int32(state, "volume_max", dmc->volume_max);
+	eu_variant_map_set_int32(state, "volume_step", dmc->volume_step);
+
+	return true;
+}
+
 void musiccast_device_cleanup(device_t *device)
 {
 	device_musiccast_t *mc = device_get_userdata(device);
@@ -117,7 +136,7 @@ static device_type_info_t musiccast_info = {
 	.check_cb = NULL,
 	.parse_cb = musiccast_device_parser,
 	.exec_cb = musiccast_device_exec,
-	.state_cb = NULL,
+	.state_cb = musiccast_device_state,
 	.cleanup_cb = musiccast_device_cleanup,
 };
 
