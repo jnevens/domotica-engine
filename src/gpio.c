@@ -92,7 +92,7 @@ void gpio_input_handle_edge(device_t *device)
 bool gpio_input_find_by_fd_cb(device_t *device, void *arg)
 {
 	if (strcmp(device_get_type(device), "GPIO") == 0) {
-		int fd = (int)arg;
+		int fd = (int)(arg - NULL);
 		gpio_t *input_gpio = device_get_userdata(device);
 		if (input_gpio->fd == fd) {
 			return true;
