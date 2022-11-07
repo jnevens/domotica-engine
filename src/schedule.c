@@ -197,12 +197,11 @@ static schedule_entry_t *schedule_search_entry(schedule_t *schedule, int day, in
 
 
 
-static void schedule_check_event(schedule_t *schedule)
+static void schedule_check_event(schedule_t *schedule, time_t t)
 {
-	time_t t = time(NULL);
 	struct tm *ts = localtime(&t);
 
-	//eu_log_debug("schedule: %s %d %d:%d", schedule->name, ts->tm_wday, ts->tm_hour, ts->tm_min);
+	eu_log_info("schedule: %s %d %d:%d", schedule->name, ts->tm_wday, ts->tm_hour, ts->tm_min);
 
 	schedule_entry_t *entry = schedule_search_entry(schedule, ts->tm_wday, ts->tm_hour, ts->tm_min);
 	if (entry) {
@@ -223,16 +222,25 @@ static void schedule_check_event(schedule_t *schedule)
 
 static void schedule_check_events(void)
 {
+	time_t t = time(NULL);
+
+	int t_off = t % 60;
+	if (t_off > 30) { // probably not reached minute yet
+		t += 60 - t_off;
+	} else if (t_off > 0) { // already past minute
+		t -= t_off;
+	}
+
 	eu_list_node_t *node;
 	eu_list_for_each(node, schedules) {
-		schedule_check_event(eu_list_node_data(node));
+		schedule_check_event(eu_list_node_data(node), t);
 	}
 }
 
 static bool calculate_next_timing_event(void *arg)
 {
 	uint64_t until_next = (1000 * 60) - (get_current_time_ms() % (1000 * 60));
-	// eu_log_debug("schedule event in %d!", until_next);
+	eu_log_info("schedule event in %d!", until_next);
 	eu_event_timer_create(until_next, calculate_next_timing_event, (void *)0xdeadbeef);
 
 	if (arg != NULL) {

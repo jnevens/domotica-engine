@@ -4,7 +4,7 @@ domotica_engine_dir = $(sysconfdir)/domotica-engine
 
 sbin_PROGRAMS = domotica-engine domctl
 
-domotica_engine_LDADD = -leu $(LDADD) -lm -lsqlite3 -lcurl -ljson-c
+domotica_engine_LDADD = -leu $(LDADD) -lm -lsqlite3 -lcurl -ljson-c -lpthread
 domotica_engine_CFLAGS = -rdynamic -funwind-tables -D_GNU_SOURCE
 domotica_engine_SOURCES = \
 	action.c \

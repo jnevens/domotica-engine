@@ -77,7 +77,7 @@ static bool musiccast_device_parser(device_t *device, char *options[])
 		eu_log_debug("Yamaha MusicCast device created (name: %s, IP: %s, zone: %s)",
 				device_get_name(device), inet_ntoa(dmc->ip), dmc->zone);
 
-		musiccast_zone_status(dmc->mcc, dmc->zone);
+		// musiccast_zone_status(dmc->mcc, dmc->zone);
 
 		return true;
 	}

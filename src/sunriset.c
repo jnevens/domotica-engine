@@ -272,7 +272,7 @@ static bool sunriset_parser(device_t *device, char *options[])
 	return false;
 }
 
-static bool sunrised_device_state(device_t *device, eu_variant_map_t *varmap)
+static bool sunriset_device_state(device_t *device, eu_variant_map_t *varmap)
 {
 	char buf[32];
 	sunriset_t *sr = device_get_userdata(device);
@@ -300,7 +300,7 @@ static bool sunrised_device_state(device_t *device, eu_variant_map_t *varmap)
 	return true;
 }
 
-static void sunrised_device_cleanup(device_t *device)
+static void sunriset_device_cleanup(device_t *device)
 {
 	sunriset_t *sr = device_get_userdata(device);
 	for (int se = 0; se < SUNRISET_EVENT_COUNT; se++) {
@@ -325,8 +325,8 @@ static device_type_info_t sunriset_info = {
 	.check_cb = NULL,
 	.parse_cb = sunriset_parser,
 	.exec_cb = NULL,
-	.state_cb = sunrised_device_state,
-	.cleanup_cb = sunrised_device_cleanup,
+	.state_cb = sunriset_device_state,
+	.cleanup_cb = sunriset_device_cleanup,
 };
 
 bool sunriset_technology_init(void)
