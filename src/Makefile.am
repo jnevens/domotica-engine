@@ -30,6 +30,8 @@ domotica_engine_SOURCES = \
 	sunriset.c \
 	technologies.c \
 	timer.c \
+	velux_klf200.c \
+	utils_cmd.c \
 	utils_http.c \
 	utils_gpio.c \
 	utils_sched.c \

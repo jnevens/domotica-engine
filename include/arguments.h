@@ -14,6 +14,7 @@ typedef struct arguments {
 	bool config_test;
 	char *pidfile;
 	char *rulesdir;
+	char *execdir;
 } arguments_t;
 
 arguments_t *arguments_get(void);

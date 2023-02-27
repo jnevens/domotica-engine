@@ -16,6 +16,7 @@ static arguments_t arguments = {
 	.config_test = false,
 	.pidfile = "/var/run/domotica-engine.pid",
 	.rulesdir = "/etc/domotica-engine/rules.d",
+	.execdir = "/etc/domotica-engine/exec.d",
 };
 
 /* Program documentation. */

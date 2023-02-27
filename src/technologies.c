@@ -11,6 +11,7 @@
 
 #include "config.h"
 #include "eltako.h"
+#include "velux_klf200.h"
 #include "soltracker.h"
 #include "gpio.h"
 #include "yamaha_mc.h"
@@ -75,6 +76,11 @@ static technology_t technologies[] = {
 		{
 				.init_fn = bool_technology_init,
 				.name = "Booleans",
+				.exit_on_fail = true,
+		},
+		{
+				.init_fn = velux_klf200_technology_init,
+				.name = "VELUX KLF200",
 				.exit_on_fail = true,
 		}
 };
