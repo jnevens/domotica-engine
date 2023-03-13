@@ -102,12 +102,12 @@ static bool fud14_device_exec(device_t *device, action_t *action, event_t *event
 static bool fud14_device_check(device_t *device, condition_t *condition)
 {
 	device_fud14_t *fud14 = device_get_userdata(device);
-	switch (condition_get_type(condition)) {
 
 	eu_log_debug("condition: %s, current value: %d",
 			condition_type_to_char(condition_get_type(condition)),
 			fud14->dim_value);
 
+	switch (condition_get_type(condition)) {
 	case CONDITION_SET:
 		return (fud14->dim_value > 0) ? true : false;
 		break;
