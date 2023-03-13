@@ -21,8 +21,9 @@
 #include "action.h"
 #include "sunriset.h"
 
-typedef enum {
-	SUNRISET_EVENT_RISE= 0,
+typedef enum
+{
+	SUNRISET_EVENT_RISE = 0,
 	SUNRISET_EVENT_SET,
 	SUNRISET_EVENT_RISE_CIV,
 	SUNRISET_EVENT_SET_CIV,
@@ -33,7 +34,8 @@ typedef enum {
 	SUNRISET_EVENT_COUNT
 } sunriset_event_e;
 
-typedef struct {
+typedef struct
+{
 	double lat;
 	double lon;
 	double rise;
@@ -44,23 +46,31 @@ typedef struct {
 	double set_naut;
 	double rise_astr;
 	double set_astr;
+	bool rised;
+	bool rised_civ;
+	bool rised_naut;
+	bool rised_astr;
 	eu_event_timer_t *midnight;
 	eu_event_timer_t *sunriset_timers[SUNRISET_EVENT_COUNT];
 } sunriset_t;
 
-typedef struct {
+typedef struct
+{
 	sunriset_event_e se;
 	device_t *device;
 } sunriset_event_t;
 
 static void sunriset_calculate_next_run(device_t *device);
+static void sunriset_current_state(device_t *device);
 
 bool sunriset_event_callback(void *arg)
 {
 	sunriset_event_t *sunevent = arg;
 	sunriset_t *sr = device_get_userdata(sunevent->device);
+	device_t *device = sunevent->device;
 
-	switch (sunevent->se) {
+	switch (sunevent->se)
+	{
 	case SUNRISET_EVENT_RISE:
 		device_trigger_event(sunevent->device, EVENT_SUNRISE);
 		break;
@@ -91,6 +101,8 @@ bool sunriset_event_callback(void *arg)
 
 	sr->sunriset_timers[sunevent->se] = NULL;
 	free(sunevent);
+
+	sunriset_current_state(device);
 	return false;
 }
 
@@ -99,7 +111,7 @@ static void sunriset_create_event_timer(device_t *device, sunriset_event_e se, i
 	sunriset_t *sr = device_get_userdata(device);
 	time_t ct = time(NULL), et;
 
-	if(ctime(&ct) == NULL) {
+	if (ctime(&ct) == NULL) {
 		eu_log_err("Failed creating time!");
 		return;
 	}
@@ -129,33 +141,67 @@ static void sunriset_create_event_timer(device_t *device, sunriset_event_e se, i
 	}
 }
 
+static void sunriset_current_state(device_t *device)
+{
+	sunriset_t *sr = device_get_userdata(device);
+
+	if (sr->sunriset_timers[SUNRISET_EVENT_RISE_ASTR]) {
+		sr->rised_astr = false;
+	} else if (sr->sunriset_timers[SUNRISET_EVENT_SET_ASTR]) {
+		sr->rised_astr = true;
+	}
+
+	if (sr->sunriset_timers[SUNRISET_EVENT_RISE_NAUT]) {
+		sr->rised_naut = false;
+	} else if (sr->sunriset_timers[SUNRISET_EVENT_SET_NAUT]) {
+		sr->rised_naut = true;
+	}
+
+	if (sr->sunriset_timers[SUNRISET_EVENT_RISE_CIV]) {
+		sr->rised_civ = false;
+	} else if (sr->sunriset_timers[SUNRISET_EVENT_SET_CIV]) {
+		sr->rised_civ = true;
+	}
+	
+	if (sr->sunriset_timers[SUNRISET_EVENT_RISE]) {
+		sr->rised = false;
+	} else if (sr->sunriset_timers[SUNRISET_EVENT_SET]) {
+		sr->rised = true;
+	}
+
+	eu_log_info("sunrised:              %d", sr->rised);
+	eu_log_info("sunrised civilian:     %d", sr->rised_civ);
+	eu_log_info("sunrised nautical:     %d", sr->rised_naut);
+	eu_log_info("sunrised astronomical: %d", sr->rised_astr);
+}
+
 static void sunriset_calculate(device_t *device)
 {
 	sunriset_t *sr = device_get_userdata(device);
-	int year,month,day;
+	int year, month, day;
 	double rise, set;
 	double rise_civ, set_civ;
 	double rise_naut, set_naut;
 	double rise_astr, set_astr;
 	double tz_corr = 0.0;
-	time_t tt;
+	time_t ct;
 	struct tm *tm;
 
-	tt = time(NULL);
-	if(ctime(&tt) == NULL) {
+	ct = time(NULL);
+	if (ctime(&ct) == NULL) {
 		eu_log_err("Failed creating time!");
 		return;
 	}
-	tm = localtime(&tt);
+	tm = localtime(&ct);
 
 	year = 1900 + tm->tm_year;
 	month = 1 + tm->tm_mon;
 	day = 1 + tm->tm_mday;
 
 	eu_log_debug("date: %d-%d-%d %d:%d:%d %s GMT%s%ds", year, month, day, tm->tm_hour, tm->tm_min, tm->tm_sec,
-			tm->tm_zone, (tm->tm_gmtoff >= 0) ? "+" : "", tm->tm_gmtoff);
+				 tm->tm_zone, (tm->tm_gmtoff >= 0) ? "+" : "", tm->tm_gmtoff);
 
-	tz_corr = (tm->tm_gmtoff*1.0) / 3600.0;
+	tz_corr = (tm->tm_gmtoff * 1.0) / 3600.0;
 
 	sun_rise_set(year, month, day, sr->lon, sr->lat, &rise, &set);
 	civil_twilight(year, month, day, sr->lon, sr->lat, &rise_civ, &set_civ);
@@ -171,18 +217,18 @@ static void sunriset_calculate(device_t *device)
 	rise_astr += tz_corr;
 	set_astr += tz_corr;
 
-	eu_log_info( "sunrise:              %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
-		TMOD(HOURS(rise)), MINUTES(rise), tm->tm_zone,
-		TMOD(HOURS(set)), MINUTES(set), tm->tm_zone);
-	eu_log_info( "sunrise civilian:     %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
-		TMOD(HOURS(rise_civ)), MINUTES(rise_civ), tm->tm_zone,
-		TMOD(HOURS(set_civ)), MINUTES(set_civ), tm->tm_zone);
-	eu_log_info( "sunrise nautical:     %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
-		TMOD(HOURS(rise_naut)), MINUTES(rise_naut), tm->tm_zone,
-		TMOD(HOURS(set_naut)), MINUTES(set_naut), tm->tm_zone);
-	eu_log_info( "sunrise astronomical: %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
-		TMOD(HOURS(rise_astr)), MINUTES(rise_astr), tm->tm_zone,
-		TMOD(HOURS(set_astr)), MINUTES(set_astr), tm->tm_zone);
+	eu_log_info("sunrise:              %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
+				TMOD(HOURS(rise)), MINUTES(rise), tm->tm_zone,
+				TMOD(HOURS(set)), MINUTES(set), tm->tm_zone);
+	eu_log_info("sunrise civilian:     %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
+				TMOD(HOURS(rise_civ)), MINUTES(rise_civ), tm->tm_zone,
+				TMOD(HOURS(set_civ)), MINUTES(set_civ), tm->tm_zone);
+	eu_log_info("sunrise nautical:     %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
+				TMOD(HOURS(rise_naut)), MINUTES(rise_naut), tm->tm_zone,
+				TMOD(HOURS(set_naut)), MINUTES(set_naut), tm->tm_zone);
+	eu_log_info("sunrise astronomical: %2.2d:%2.2d %s, sunset %2.2d:%2.2d %s",
+				TMOD(HOURS(rise_astr)), MINUTES(rise_astr), tm->tm_zone,
+				TMOD(HOURS(set_astr)), MINUTES(set_astr), tm->tm_zone);
 
 	sr->rise = rise;
 	sr->set = set;
@@ -201,6 +247,8 @@ static void sunriset_calculate(device_t *device)
 	sunriset_create_event_timer(device, SUNRISET_EVENT_SET_NAUT, TMOD(HOURS(set_naut)), MINUTES(set_naut));
 	sunriset_create_event_timer(device, SUNRISET_EVENT_RISE_ASTR, TMOD(HOURS(rise_astr)), MINUTES(rise_astr));
 	sunriset_create_event_timer(device, SUNRISET_EVENT_SET_ASTR, TMOD(HOURS(set_astr)), MINUTES(set_astr));
+
+	sunriset_current_state(device);
 }
 
 static bool sunriset_next_run_callback(void *arg)
@@ -217,7 +265,7 @@ static void sunriset_calculate_next_run(device_t *device)
 {
 	sunriset_t *sr = device_get_userdata(device);
 	time_t ct = time(NULL), nrt;
-	if(ctime(&ct) == NULL) {
+	if (ctime(&ct) == NULL) {
 		eu_log_err("Failed creating time!");
 		return;
 	}
@@ -243,23 +291,19 @@ static bool sunriset_parser(device_t *device, char *options[])
 
 		if (2 == sscanf(options[0], "%lf%1[Nn]", &temp, &hemisphere)) {
 			sunriset->lat = temp;
-			//coords_set |= LAT_SET;
 		}
 		if (2 == sscanf(options[0], "%lf%1[Ss]", &temp, &hemisphere)) {
 			sunriset->lat = -temp;
-			//coords_set |= LAT_SET;
 		}
 		if (2 == sscanf(options[1], "%lf%1[Ww]", &temp, &hemisphere)) {
 			sunriset->lon = -temp;
-			//coords_set |= LON_SET;
 		}
 		/* this looks different from the others because 77E
 		 parses as scientific notation */
 		if (1 == sscanf(options[1], "%lf%", &temp)
 				&& (options[1][strlen(options[1]) - 1] == 'E'
-					|| options[1][strlen(options[1]) - 1] == 'e')) {
+				|| options[1][strlen(options[1]) - 1] == 'e')) {
 			sunriset->lon = temp;
-			//coords_set |= LON_SET;
 		}
 
 		eu_log_info("sunriset: lat: %f lon: %f", sunriset->lat, sunriset->lon);
@@ -268,6 +312,32 @@ static bool sunriset_parser(device_t *device, char *options[])
 		sunriset_calculate(device);
 		sunriset_calculate_next_run(device);
 		return true;
+	}
+	return false;
+}
+
+static bool sunriset_device_check(device_t *device, condition_t *condition)
+{
+	sunriset_t *sr = device_get_userdata(device);
+
+	switch (condition_get_type(condition))
+	{
+	case CONDITION_SUNRISE:
+		return sr->rised;
+	case CONDITION_SUNRISE_CIV:
+		return sr->rised_civ;
+	case CONDITION_SUNRISE_ASTRO:
+		return sr->rised_astr;
+	case CONDITION_SUNRISE_NAUT:
+		return sr->rised_naut;
+	case CONDITION_SUNSET:
+		return !sr->rised;
+	case CONDITION_SUNSET_CIV:
+		return !sr->rised_civ;
+	case CONDITION_SUNSET_ASTRO:
+		return !sr->rised_astr;
+	case CONDITION_SUNSET_NAUT:
+		return !sr->rised_naut;
 	}
 	return false;
 }
@@ -316,13 +386,17 @@ static void sunriset_device_cleanup(device_t *device)
 
 static device_type_info_t sunriset_info = {
 	.name = "SUNRISET",
-	.events =	EVENT_SUNRISE | EVENT_SUNSET |
-				EVENT_SUNRISE_CIV | EVENT_SUNSET_CIV |
-				EVENT_SUNRISE_NAUT | EVENT_SUNSET_NAUT |
-				EVENT_SUNRISE_ASTRO | EVENT_SUNSET_ASTRO,
+	.events = EVENT_SUNRISE | EVENT_SUNSET |
+			  EVENT_SUNRISE_CIV | EVENT_SUNSET_CIV |
+			  EVENT_SUNRISE_NAUT | EVENT_SUNSET_NAUT |
+			  EVENT_SUNRISE_ASTRO | EVENT_SUNSET_ASTRO,
 	.actions = 0,
-	.conditions = 0,
-	.check_cb = NULL,
+	.conditions =
+		CONDITION_SUNRISE | CONDITION_SUNSET |
+		CONDITION_SUNRISE_CIV | CONDITION_SUNSET_CIV |
+		CONDITION_SUNRISE_NAUT | CONDITION_SUNSET_NAUT |
+		CONDITION_SUNRISE_ASTRO | CONDITION_SUNSET_ASTRO,
+	.check_cb = sunriset_device_check,
 	.parse_cb = sunriset_parser,
 	.exec_cb = NULL,
 	.state_cb = sunriset_device_state,
