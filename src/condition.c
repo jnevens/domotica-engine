@@ -51,7 +51,7 @@ condition_type_e condition_type_from_char(const char *condition_str)
 		}
 		i++;
 	}
-	eu_log_err("Cannot find action type: %s", condition_str);
+	eu_log_err("Cannot find condition type: %s", condition_str);
 	return -1;
 }
 
