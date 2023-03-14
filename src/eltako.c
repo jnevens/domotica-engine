@@ -7,12 +7,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include <eu/log.h>
 #include <eu/event.h>
-#include <libvsb/client.h>
 #include <libeltako/frame.h>
 #include <libeltako/message.h>
+#include <libeltako/serial.h>
+#include <libeltako/frame_receiver.h>
 
 #include "device.h"
 #include "device_list.h"
@@ -22,21 +24,27 @@
 #include "eltako_fts14em.h"
 #include "eltako_fud14.h"
 
-static vsb_client_t *vsb_client;
+static eltako_frame_receiver_t *eltako_receiver = NULL;
+static int eltako_fd = -1;
 
 bool eltako_send(eltako_message_t *msg)
 {
 	if (msg == NULL) {
 		return false;
 	}
+
 	eltako_frame_t *frame = eltako_message_to_frame(msg);
 	eltako_frame_print(frame);
-	vsb_client_send_data(vsb_client, eltako_frame_get_data(frame), eltako_frame_get_raw_size(frame));
-	eltako_message_destroy(msg);
+	eltako_frame_send(frame, eltako_fd);
+
+	//eltakod_execute_scripts(frame, "TX");
+
 	eltako_frame_destroy(frame);
+	eltako_message_destroy(msg);
+	return true;
 }
 
-static bool device_list_find_cb(device_t *device, void *arg) {
+static bool eltako_device_list_find_cb(device_t *device, void *arg) {
 	eltako_message_t *msg = arg;
 	if (strcmp(device_get_type(device), "FTS14EM") == 0) {
 		uint32_t address = eltako_fts14em_get_address(device);
@@ -47,14 +55,11 @@ static bool device_list_find_cb(device_t *device, void *arg) {
 	return false;
 }
 
-static void incoming_data(void *data, size_t len, void *arg)
+static void incoming_eltako_msg(eltako_message_t *msg)
 {
-	eltako_frame_t *frame = eltako_frame_create_from_buffer(data, len);
-	eltako_message_t *msg = eltako_message_create_from_frame(frame);
-	//eltako_frame_print(frame);
-
 	eltako_message_print(msg);
-	device_t *device = device_list_find(device_list_find_cb, (void *)msg);
+
+	device_t *device = device_list_find(eltako_device_list_find_cb, (void *)msg);
 	if (device) {
 		eu_log_debug("Input triggered: %s (%s)", device_get_name(device), device_get_type(device));
 		if (strcmp(device_get_type(device), "FTS14EM") == 0) {
@@ -63,43 +68,58 @@ static void incoming_data(void *data, size_t len, void *arg)
 	} else {
 		eu_log_debug("ignore eltako message from 0x%x", eltako_message_get_address(msg));
 	}
-
-	eltako_message_destroy(msg);
-	eltako_frame_destroy(frame);
 }
 
-static void handle_incoming_event(int fd, short int revents, void *arg)
+static void incoming_eltako_data(int fd, short revents, void *arg)
 {
-	vsb_client_t *vsb_client = (vsb_client_t *)arg;
-	vsb_client_handle_incoming_event(vsb_client);
-}
+	uint8_t buf[1024];
+	ssize_t rval;
 
-void handle_connection_disconnect(void *arg)
-{
-	eu_log_err("Connection lost with server!\n");
-}
+	bzero(buf, sizeof(buf));
+	while (1) {
+		if ((rval = eltako_serial_read(fd, buf, sizeof(buf))) < 0) {
+			if (errno == EWOULDBLOCK) {
+				break;
+			}
+			perror("reading stream message");
+		} else if (rval > 0) { // get data
+			eltako_frame_receiver_add_data(eltako_receiver, buf, (size_t) rval);
 
-static bool eltako_connect_with_eltakod(void)
-{
-	vsb_client = vsb_client_init("/var/run/eltako.socket", "domotica-engine");
-	if (vsb_client == NULL) {
-		eu_log_err("Failed connection to eltakod! Cannot open /var/run/eltako.socket");
-		return false;
+			eltako_frame_t *frame = NULL;
+			while ((frame = eltako_frame_receiver_parse_buffer(eltako_receiver)) != NULL) {
+				eltako_message_t *msg = eltako_message_create_from_frame(frame);
+				if (msg) {
+					incoming_eltako_msg(msg);
+					eltako_message_destroy(msg);
+				}
+
+				eltako_frame_destroy(frame);
+			}
+		}
 	}
-	int eltako_fd = vsb_client_get_fd(vsb_client);
-	vsb_client_register_incoming_data_cb(vsb_client, incoming_data, NULL);
-	eu_event_add(eltako_fd, POLLIN, handle_incoming_event, NULL, vsb_client);
-	vsb_client_register_disconnect_cb(vsb_client, handle_connection_disconnect, NULL);
+}
 
-	eu_log_info("Eltako registered (fd = %d)", eltako_fd);
+static bool eltako_open_serial_connection(const char *port)
+{
+	eltako_fd = 0;
+
+	if ((eltako_fd = eltako_serial_port_init(port)) <= 0) {
+		printf("serial port setup failed!\n");
+		return -1;
+	}
+
+	eltako_serial_port_set_blocking(eltako_fd, false);
+	eltako_receiver = eltako_frame_receiver_init();
+
+	eu_event_add(eltako_fd, POLLIN, incoming_eltako_data, NULL, NULL);
 
 	return true;
 }
 
 bool eltako_technology_init(void)
 {
-	if(!eltako_connect_with_eltakod()) {
-		eu_log_err("Failed to connect to eltakod!");
+	if (!eltako_open_serial_connection("/dev/ttyUSB0")) {
+		eu_log_err("Failed to connect to eltako series 14!");
 		return false;
 	}
 
