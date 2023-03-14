@@ -25,14 +25,7 @@
 #include "rule_list.h"
 #include "schedule.h"
 
-
-
 static void action_input_handler(char *line);
-static void action_output_handler(char *line);
-
-// todo rule_t input_t event_t output_t action_t
-
-
 
 int rules_read_file_declarations(const char *file)
 {
@@ -47,7 +40,6 @@ int rules_read_file_declarations(const char *file)
 
 	char line[256];
 	while (fgets(line, sizeof(line), fp) != NULL) {
-		static rule_t *rule = NULL;
 		static schedule_t *schedule = NULL;
 		line_t *ln = line_parse(line);
 
@@ -118,7 +110,6 @@ int rules_read_file_declarations(const char *file)
 			}
 			//eu_log_info("%s", line);
 		} else {
-			rule = NULL;
 			if (schedule) {
 				schedule_parsing_finished(schedule);
 				schedule = NULL;

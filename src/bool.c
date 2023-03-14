@@ -59,6 +59,8 @@ static bool bool_exec(device_t *device, action_t *action, event_t *event)
 	case ACTION_TOGGLE:
 		b->val = (b->val) ? 0 : 1;
 		break;
+	default:
+		break;
 	}
 
 	eu_log_debug("bool %s set to: %d (prev %d)", device_get_name(device), (b->val) ? 1 : 0, (val_priv) ? 1 : 0);
@@ -79,6 +81,8 @@ static bool bool_check(device_t *device, condition_t *condition)
 		break;
 	case CONDITION_UNSET:
 		return (!b->val) ? true : false;
+		break;
+	default:
 		break;
 	}
 	return false;

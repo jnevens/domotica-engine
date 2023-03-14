@@ -80,6 +80,8 @@ static bool fsr14_device_check(device_t *device, condition_t *condition)
 	case CONDITION_UNSET:
 		return (fsr14->val == 0) ? true : false;
 		break;
+	default:
+		break;
 	}
 	return false;
 }

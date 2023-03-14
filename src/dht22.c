@@ -142,7 +142,6 @@ static void dht22_store_measurement_values(device_t *device)
 
 static void dht22_measure_device(device_t *device)
 {
-	time_t now = time(NULL);
 	dht22_t *dht22 = device_get_userdata(device);
 
 	if (dht22->error)
@@ -157,7 +156,6 @@ static void dht22_measure_devices(void)
 {
 	eu_list_for_each_declare(node, dht22_devices) {
 		device_t *device = eu_list_node_data(node);
-		dht22_t *dht22 = device_get_userdata(device);
 
 		dht22_measure_device(device);
 	}

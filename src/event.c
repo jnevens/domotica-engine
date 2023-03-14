@@ -135,7 +135,6 @@ void event_print(event_t *event)
 {
 	device_t *device = (device_t *) event->device;
 
-
 	eu_log_info("event: device: %s, type: %s", device_get_name(device), event_get_name(event));
 
 	if (eu_variant_map_count(event->options) > 0) {

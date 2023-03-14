@@ -201,6 +201,8 @@ static bool soltracker_check(device_t *device, condition_t *condition)
 		break;
 	case CONDITION_UNSET:
 		break;
+	default:
+		break;
 	}
 	return false;
 }

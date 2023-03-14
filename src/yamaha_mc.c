@@ -105,6 +105,8 @@ static bool musiccast_device_exec(device_t *device, action_t *action, event_t *e
 	case ACTION_DOWN:
 		musiccast_zone_volume_set(dmc->mcc, dmc->zone, MC_ZONE_VOLUME_SET_DOWN, 1);
 		break;
+	default:
+		break;
 	}
 
 	return false;

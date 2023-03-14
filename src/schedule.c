@@ -69,6 +69,8 @@ static condition_type_e schedule_get_current_condition(schedule_t *schedule)
 		case EVENT_UNSET :
 			condition = CONDITION_UNSET;
 			break;
+		default:
+			break;
 		}
 	}
 
@@ -87,6 +89,8 @@ static condition_type_e schedule_get_current_condition(schedule_t *schedule)
 				break;
 			case EVENT_UNSET :
 				condition = CONDITION_UNSET;
+				break;
+			default:
 				break;
 			}
 			sched_ts_max = entry_ts;

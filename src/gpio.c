@@ -179,6 +179,8 @@ static bool gpio_output_exec(device_t *device, action_t *action, event_t *event)
 		output_gpio->value = !output_gpio->value;
 		gpio_set_value(output_gpio->pin, output_gpio->value);
 		break;
+	default:
+		return false;
 	}
 	eu_log_debug("gpio %s(%d) set to: %d", device_get_name(device), output_gpio->pin, output_gpio->value);
 

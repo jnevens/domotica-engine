@@ -17,6 +17,7 @@ static eu_list_t *devices = NULL;
 bool device_list_init(void)
 {
 	devices = eu_list_create();
+	return !!devices;
 }
 
 eu_list_t *device_list_get(void)
@@ -32,7 +33,11 @@ void device_list_destroy(void)
 
 bool device_list_add(device_t *device)
 {
+	if (!device)
+		return false;
+
 	eu_list_append(devices, device);
+	return true;
 }
 
 device_t *device_list_find_by_name(const char *name)

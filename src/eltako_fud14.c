@@ -114,6 +114,8 @@ static bool fud14_device_check(device_t *device, condition_t *condition)
 	case CONDITION_UNSET:
 		return (fud14->dim_value == 0) ? true : false;
 		break;
+	default:
+		break;
 	}
 	return false;
 }

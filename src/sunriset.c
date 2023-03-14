@@ -338,6 +338,8 @@ static bool sunriset_device_check(device_t *device, condition_t *condition)
 		return !sr->rised_astr;
 	case CONDITION_SUNSET_NAUT:
 		return !sr->rised_naut;
+	default:
+		break;
 	}
 	return false;
 }

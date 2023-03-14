@@ -123,6 +123,8 @@ static bool velux_klf200_device_check(device_t *device, condition_t *condition)
 	case CONDITION_UNSET:
 		return (velux_klf200->actual_value == 0) ? true : false;
 		break;
+	default:
+		break;
 	}
 	return false;
 }

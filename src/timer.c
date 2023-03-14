@@ -83,6 +83,8 @@ static bool timer_device_exec(device_t *device, action_t *action, event_t *event
 			tmr->timer = NULL;
 		}
 		break;
+	default:
+		break;
 	}
 
 	return false;
