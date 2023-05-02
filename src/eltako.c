@@ -8,6 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <eu/log.h>
 #include <eu/event.h>
@@ -26,6 +30,47 @@
 
 static eltako_frame_receiver_t *eltako_receiver = NULL;
 static int eltako_fd = -1;
+static const char *scriptsdir = "/etc/domotica-engine/eltako.d";
+
+void eltakod_execute_scripts(eltako_frame_t *frame, const char *prefix)
+{
+	DIR *dir;
+	struct dirent *ent;
+
+	if (access(scriptsdir, F_OK) != 0)
+		return;
+
+	if ((dir = opendir(scriptsdir)) != NULL) {
+		/* print all the files and directories within directory */
+		while ((ent = readdir(dir)) != NULL) {
+			char path[512];
+			char cmd[512 + 128];
+
+			if (ent->d_name[0] == '.')
+				continue;
+
+			snprintf(path, sizeof(path), "%s/%s", scriptsdir, ent->d_name);
+			if (access(path, X_OK) == 0) {
+				eltako_message_t *msg = eltako_message_create_from_frame(frame);
+				const uint8_t *data = eltako_message_get_data(msg);
+				printf("Execute script: %s\n", path);
+
+				snprintf(cmd, sizeof(cmd), "%s %s %d 0x%08X 0x%02X%02X%02X%02X %d",
+						path,
+						prefix,
+						eltako_message_get_rorg(msg),
+						eltako_message_get_address(msg),
+						data[0], data[1], data[2], data[3],
+						eltako_message_get_status(msg));
+				system(cmd);
+			}
+		}
+		closedir(dir);
+	} else {
+		/* could not open directory */
+		printf("Failed to open dir: %m");
+	}
+}
 
 bool eltako_send(eltako_message_t *msg)
 {
@@ -37,7 +82,7 @@ bool eltako_send(eltako_message_t *msg)
 	eltako_frame_print(frame);
 	eltako_frame_send(frame, eltako_fd);
 
-	//eltakod_execute_scripts(frame, "TX");
+	eltakod_execute_scripts(frame, "TX");
 
 	eltako_frame_destroy(frame);
 	eltako_message_destroy(msg);
@@ -93,6 +138,7 @@ static void incoming_eltako_data(int fd, short revents, void *arg)
 					eltako_message_destroy(msg);
 				}
 
+				eltakod_execute_scripts(frame, "RX");
 				eltako_frame_destroy(frame);
 			}
 		}
