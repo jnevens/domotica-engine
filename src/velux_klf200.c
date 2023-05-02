@@ -133,7 +133,20 @@ static bool velux_klf200_device_state(device_t *device, eu_variant_map_t *varmap
 {
 	device_velux_klf200_t *velux_klf200 = device_get_userdata(device);
 
-	eu_variant_map_set_int32(varmap, "value", velux_klf200->actual_value);
+	eu_variant_map_set_char(varmap, "value", "unknown");
+	if (velux_klf200->changed == 0) {
+		if (velux_klf200->actual_value == 1) {
+			eu_variant_map_set_char(varmap, "value", "closed");
+		} else {
+			eu_variant_map_set_char(varmap, "value", "open");
+		}
+	} else {
+		if (velux_klf200->actual_value == 1) {
+			eu_variant_map_set_char(varmap, "value", "closing");
+		} else {
+			eu_variant_map_set_char(varmap, "value", "opening");
+		}
+	}
 
 	return true;
 }
@@ -205,8 +218,11 @@ static void* velux_klf200_worker_main(void *arguments)
 			if (velux_klf200_worker_check_velux(device))
 				has_work_done = true;
 		}
-		if (!has_work_done)
-			sleep(1);
+
+		if (has_work_done)
+			continue;
+		
+		sleep(1);
 	}
 
 	return NULL;
