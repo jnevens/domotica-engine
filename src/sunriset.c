@@ -145,27 +145,27 @@ static void sunriset_current_state(device_t *device)
 {
 	sunriset_t *sr = device_get_userdata(device);
 
-	if (sr->sunriset_timers[SUNRISET_EVENT_RISE_ASTR]) {
-		sr->rised_astr = false;
-	} else if (sr->sunriset_timers[SUNRISET_EVENT_SET_ASTR]) {
+	sr->rised_astr = false;
+	if (!sr->sunriset_timers[SUNRISET_EVENT_RISE_ASTR]
+			&& sr->sunriset_timers[SUNRISET_EVENT_SET_ASTR]) {
 		sr->rised_astr = true;
 	}
 
-	if (sr->sunriset_timers[SUNRISET_EVENT_RISE_NAUT]) {
-		sr->rised_naut = false;
-	} else if (sr->sunriset_timers[SUNRISET_EVENT_SET_NAUT]) {
+	sr->rised_naut = false;
+	if (!sr->sunriset_timers[SUNRISET_EVENT_RISE_NAUT]
+			&& sr->sunriset_timers[SUNRISET_EVENT_SET_NAUT]) {
 		sr->rised_naut = true;
 	}
 
-	if (sr->sunriset_timers[SUNRISET_EVENT_RISE_CIV]) {
-		sr->rised_civ = false;
-	} else if (sr->sunriset_timers[SUNRISET_EVENT_SET_CIV]) {
+	sr->rised_civ = false;
+	if (!sr->sunriset_timers[SUNRISET_EVENT_RISE_CIV]
+			&& sr->sunriset_timers[SUNRISET_EVENT_SET_CIV]) {
 		sr->rised_civ = true;
 	}
 	
-	if (sr->sunriset_timers[SUNRISET_EVENT_RISE]) {
-		sr->rised = false;
-	} else if (sr->sunriset_timers[SUNRISET_EVENT_SET]) {
+	sr->rised = false;
+	if (!sr->sunriset_timers[SUNRISET_EVENT_RISE]
+			&& sr->sunriset_timers[SUNRISET_EVENT_SET]) {
 		sr->rised = true;
 	}
 
@@ -368,6 +368,10 @@ static bool sunriset_device_state(device_t *device, eu_variant_map_t *varmap)
 	eu_variant_map_set_char(varmap, "sunset nautical", buf);
 	sprintf(buf, "%2.2d:%2.2d", TMOD(HOURS(sr->set_astr)), MINUTES(sr->set_astr));
 	eu_variant_map_set_char(varmap, "sunset astronomical", buf);
+	eu_variant_map_set_bool(varmap, "rised", sr->rised);
+	eu_variant_map_set_bool(varmap, "rised civilian", sr->rised_civ);
+	eu_variant_map_set_bool(varmap, "rised nautical", sr->rised_naut);
+	eu_variant_map_set_bool(varmap, "rised astronomical", sr->rised_astr);
 
 	return true;
 }
