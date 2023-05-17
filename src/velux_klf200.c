@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include <unistd.h>
 #include <math.h>
 #include <sys/types.h>
@@ -30,12 +29,14 @@ typedef struct {
 	char hostname[256];
 	char password[64];
 	int32_t actual_value;
+	int32_t target_value;
 	bool changed;
 	bool locked;
+	cmd_t *cmd;
 } device_velux_klf200_t;
 
 static eu_list_t *klf200_devices = NULL;
-static pthread_t worker_thread = 0;
+static device_t *velux_klf200_device_in_progress = NULL;
 
 static bool velux_klf200_device_parser(device_t *device, char *options[])
 {
@@ -176,6 +177,19 @@ static bool velux_klf200_device_restore(device_t *device, eu_variant_map_t *stat
 	return true;
 }
 
+static void velux_klf200_cmd_cb(int rv, const char *resp, ssize_t resp_size, void *arg)
+{
+	device_t *device = arg;
+	device_velux_klf200_t *klf200 = device_get_userdata(device);
+	eu_log_info("velux cmd done! (%s)", device_get_name(device));
+	eu_log_debug("velux cmd response:\r\n%s", resp);
+	if (klf200->target_value == klf200->actual_value)
+		klf200->changed = false;
+	velux_klf200_device_in_progress = NULL;
+	cmd_destroy(klf200->cmd);
+	klf200->cmd = NULL;
+}
+
 static bool velux_klf200_worker_check_velux(device_t *device)
 {
 	device_velux_klf200_t *klf200 = device_get_userdata(device);
@@ -186,6 +200,8 @@ static bool velux_klf200_worker_check_velux(device_t *device)
 		return false;
 	}
 
+	velux_klf200_device_in_progress = device;
+
 	// value 0 = open
 	// value 100 = close
 	asprintf(&cmd, "%s/velux-klf200.sh %s %s %d %d",
@@ -195,47 +211,36 @@ static bool velux_klf200_worker_check_velux(device_t *device)
 			klf200->address,
 			(klf200->actual_value == 0) ? 0 : 100);
 
-	char *resp = cmd_execute(cmd);
-	if (!resp)
-		rv = false;
-
-	eu_log_debug("velux klf200 resp: %s", resp);
-
-	klf200->changed = false;
+	klf200->cmd = cmd_create(cmd, velux_klf200_cmd_cb, device);
+	klf200->target_value = klf200->actual_value;
+	cmd_exec(klf200->cmd);
 
 	free(cmd);
-	free(resp);
+
 
 	return rv;
 }
 
-static void* velux_klf200_worker_main(void *arguments)
-{
-	for (;;) {
-		bool has_work_done = false;
-		eu_list_for_each_declare(node, klf200_devices) {
-			device_t *device = eu_list_node_data(node);
-			if (velux_klf200_worker_check_velux(device))
-				has_work_done = true;
-		}
 
-		if (has_work_done)
+static bool velux_klf200_worker(void *arguments)
+{
+	if (velux_klf200_device_in_progress)
+		return true;
+
+	eu_list_for_each_declare(node, klf200_devices) {
+		device_t *device = eu_list_node_data(node);
+		device_velux_klf200_t *klf200 = device_get_userdata(device);
+
+		if (!klf200->changed)
 			continue;
-		
-		sleep(1);
+
+		velux_klf200_worker_check_velux(device);
+
+		if (velux_klf200_device_in_progress)
+			break;
 	}
 
-	return NULL;
-}
-
-static bool velux_klf200_technology_init_after_fork(void *arg)
-{
-	int result_code = pthread_create(&worker_thread, NULL, velux_klf200_worker_main, NULL);
-	if (result_code) {
-		eu_log_err("Failed to create VELUX KLF200 worker thread! %m");
-	}
-
-	return false;
+	return true;
 }
 
 static device_type_info_t velux_klf200_info = {
@@ -257,7 +262,7 @@ bool velux_klf200_technology_init(void)
 	device_type_register(&velux_klf200_info);
 
 	klf200_devices = eu_list_create();
-	eu_event_timer_create(100, velux_klf200_technology_init_after_fork, NULL);
+	eu_event_timer_create(100, velux_klf200_worker, NULL);
 
 	eu_log_info("Successfully initialized: VELUX KLF200!");
 

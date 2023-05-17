@@ -68,4 +68,8 @@ domctl_SOURCES = \
 
 install-data-local:
 	mkdir -p $(DESTDIR)/$(domotica_engine_dir)/rules.d/
+	mkdir -p $(DESTDIR)/$(domotica_engine_dir)/exec.d/
+if HAVE_MOD_ELTAKO
+	mkdir -p $(DESTDIR)/$(domotica_engine_dir)/eltako.d/
+endif
 
