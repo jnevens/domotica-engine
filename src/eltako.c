@@ -22,6 +22,7 @@
 
 #include "device.h"
 #include "device_list.h"
+#include "utils_time.h"
 #include "eltako.h"
 #include "eltako_fsr14.h"
 #include "eltako_fsb14.h"
@@ -31,6 +32,12 @@
 static eltako_frame_receiver_t *eltako_receiver = NULL;
 static int eltako_fd = -1;
 static const char *scriptsdir = "/etc/domotica-engine/eltako.d";
+static eu_list_t *eltako_send_queue = NULL;
+static uint64_t eltako_send_last = 0;
+
+/* function prototypes */
+static bool eltako_send_real(eltako_message_t *msg);
+
 
 void eltakod_execute_scripts(eltako_frame_t *frame, const char *prefix)
 {
@@ -72,7 +79,40 @@ void eltakod_execute_scripts(eltako_frame_t *frame, const char *prefix)
 	}
 }
 
+static bool eltako_check_send_queue(void * arg)
+{
+	uint64_t now = get_current_time_ms();
+
+	/* check anything in queue */
+	if (eu_list_count(eltako_send_queue) == 0)
+		return true;
+
+	/* check if we are not sending too fast */
+	if ((now - eltako_send_last) < (200 - 10))
+		return true;
+
+	/* retrieve last message from list */
+	eu_list_node_t *node = eu_list_first(eltako_send_queue);
+	eltako_message_t *msg = eu_list_node_data(node);
+	eu_list_remove_node(eltako_send_queue, node);
+
+	/* send message to eltako system */
+	eltako_send_real(msg);
+
+	return true;
+}
+
 bool eltako_send(eltako_message_t *msg)
+{
+	eu_list_append(eltako_send_queue, msg);
+
+	/* try to send directly if possible */
+	eltako_check_send_queue(NULL);
+
+	return true;
+}
+
+static bool eltako_send_real(eltako_message_t *msg)
 {
 	if (msg == NULL) {
 		return false;
@@ -81,6 +121,7 @@ bool eltako_send(eltako_message_t *msg)
 	eltako_frame_t *frame = eltako_message_to_frame(msg);
 	eltako_frame_print(frame);
 	eltako_frame_send(frame, eltako_fd);
+	eltako_send_last = get_current_time_ms();
 
 	eltakod_execute_scripts(frame, "TX");
 
@@ -169,10 +210,13 @@ bool eltako_technology_init(void)
 		return false;
 	}
 
+	eltako_send_queue = eu_list_create();
 	eltako_fts14em_init();
 	eltako_fud14_init();
 	eltako_fsr14_init();
 	eltako_fsb14_init();
+
+	eu_event_timer_create(100, eltako_check_send_queue, NULL);
 
 	eu_log_info("Succesfully initialized: eltako!");
 	return true;
