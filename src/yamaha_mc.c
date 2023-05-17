@@ -18,7 +18,6 @@
 #include "yamaha_mc.h"
 
 typedef struct {
-	struct in_addr ip;
 	char *zone;
 	bool power;
 	int32_t volume;
@@ -32,42 +31,24 @@ typedef struct {
 	size_t len;
 } musiccast_request_download_arg;
 
-static size_t musiccast_request_download_cb(void *ptr, size_t size, size_t nmemb, FILE *stream)
-{
-	eu_log_debug("data received: %uB", size * nmemb);
-	musiccast_request_download_arg *arg = (musiccast_request_download_arg *)stream;
-	size_t new_len = arg->len + size * nmemb;
-	*arg->response = realloc(*arg->response, new_len + 1);
-	memcpy(&((*arg->response)[arg->len]), ptr, size * nmemb);
-	(*arg->response)[new_len] = '\0';
-	arg->len = new_len;
-	return size * nmemb;
-}
-
 static bool musiccast_device_parser(device_t *device, char *options[])
 {
 	if (options[1] != NULL) {
-		struct in_addr ip;
 		char *zone = "main";
 		musiccast_conn_t *mcc = NULL;
-
-		if (inet_aton(options[1], &ip) == 0) {
-			fprintf(stderr, "Invalid address\n");
-			eu_log_err("Failed to convert ip address: %s : %m", options[1]);
-			return false;
-		}
 
 		if (options[2] != NULL) {
 			zone = strdup(options[2]);
 		}
 
-		if ((mcc = musiccast_init(inet_ntoa(ip))) == NULL) {
-			eu_log_err("Failed to connect with MUSICCAST device: %s", ip);
+		mcc = musiccast_init(options[1]);
+		if (mcc == NULL) {
+			eu_log_err("Failed to connect with MUSICCAST device: %s (ip = %s)",
+				device_get_name(device), options[1]);
 			return false;
 		}
 
 		device_musiccast_t *dmc = calloc(1, sizeof(device_musiccast_t));
-		dmc->ip = ip;
 		dmc->zone = zone;
 		dmc->mcc = mcc;
 		dmc->volume = 0;
@@ -75,7 +56,7 @@ static bool musiccast_device_parser(device_t *device, char *options[])
 		dmc->volume_step = 1;
 		device_set_userdata(device, dmc);
 		eu_log_debug("Yamaha MusicCast device created (name: %s, IP: %s, zone: %s)",
-				device_get_name(device), inet_ntoa(dmc->ip), dmc->zone);
+				device_get_name(device), options[1], dmc->zone);
 
 		// musiccast_zone_status(dmc->mcc, dmc->zone);
 
